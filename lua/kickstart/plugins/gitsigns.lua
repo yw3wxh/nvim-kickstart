@@ -1,9 +1,9 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- Here is a more advanced configuration example that passes options to `gitsigns.nvim`
+-- 这里是一个更高级的配置示例，演示了如何向 `gitsigns.nvim` 传递选项
 --
--- See `:help gitsigns` to understand what each configuration key does.
--- Adds git related signs to the gutter, as well as utilities for managing changes
+-- 参见 `:help gitsigns` 以了解每个配置键的作用。
+-- 在侧边栏（gutter）添加与 git 相关的符号，并提供管理更改的工具
 vim.pack.add { gh 'lewis6991/gitsigns.nvim' }
 require('gitsigns').setup {
   signs = {
@@ -22,7 +22,7 @@ require('gitsigns').setup {
       vim.keymap.set(mode, l, r, opts)
     end
 
-    -- Navigation
+    -- 导航
     map('n', ']c', function()
       if vim.wo.diff then
         vim.cmd.normal { ']c', bang = true }
@@ -39,11 +39,11 @@ require('gitsigns').setup {
       end
     end, { desc = 'Jump to previous git [c]hange' })
 
-    -- Actions
-    -- visual mode
+    -- 操作
+    -- 可视模式
     map('v', '<leader>hs', function() gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = 'git [s]tage hunk' })
     map('v', '<leader>hr', function() gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = 'git [r]eset hunk' })
-    -- normal mode
+    -- 普通模式
     map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
     map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
     map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
@@ -55,11 +55,11 @@ require('gitsigns').setup {
     map('n', '<leader>hD', function() gitsigns.diffthis '@' end, { desc = 'git [D]iff against last commit' })
     map('n', '<leader>hQ', function() gitsigns.setqflist 'all' end, { desc = 'git hunk [Q]uickfix list (all files in repo)' })
     map('n', '<leader>hq', gitsigns.setqflist, { desc = 'git hunk [q]uickfix list (all changes in this file)' })
-    -- Toggles
+    -- 开关
     map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
     map('n', '<leader>tw', gitsigns.toggle_word_diff, { desc = '[T]oggle git intra-line [w]ord diff' })
 
-    -- Text object
+    -- 文本对象
     map({ 'o', 'x' }, 'ih', gitsigns.select_hunk)
   end,
 }

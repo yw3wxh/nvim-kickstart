@@ -1,7 +1,7 @@
 --[[
 --
--- This file is not required for your own configuration,
--- but helps people determine if their system is setup correctly.
+-- 这个文件不是你配置所必需的，
+-- 但它有助于人们判断他们的系统是否设置正确。
 --
 --]]
 
@@ -20,7 +20,7 @@ local check_version = function()
 end
 
 local check_external_reqs = function()
-  -- Basic utils: `git`, `make`, `unzip`
+  -- 基础工具：`git`、`make`、`unzip`
   for _, exe in ipairs { 'git', 'make', 'unzip', 'rg' } do
     local is_executable = vim.fn.executable(exe) == 1
     if is_executable then

@@ -1,7 +1,7 @@
 --[[
 
 =====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
+==================== 继续之前请先阅读以下内容 ====================
 =====================================================================
 ========                                    .-----.          ========
 ========         .----------------------.   | === |          ========
@@ -20,81 +20,80 @@
 =====================================================================
 =====================================================================
 
-What is Kickstart?
+什么是 Kickstart？
 
-  Kickstart.nvim is *not* a distribution.
+  Kickstart.nvim 并不是一个"发行版"。
 
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
+  Kickstart.nvim 是你自己配置的一个起点。
+    目标是让你可以自上而下地阅读每一行代码，
+    理解你的配置在做什么，并按需修改成适合你的样子。
 
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
+    完成这些之后，你就可以开始探索、配置和折腾，
+    把 Neovim 变成你自己的！这可能意味着让 Kickstart 保持原样一段时间，
+    或者立刻把它拆分成模块化的部分。一切由你决定！
 
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
+    如果你对 Lua 一无所知，我建议你花点时间阅读一份指南。
+    一个只需要 10-15 分钟的示例：
       - https://learnxinyminutes.com/docs/lua/
 
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
+    对 Lua 有了更多了解之后，你可以把 `:help lua-guide` 作为
+    Neovim 如何集成 Lua 的参考。
     - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
+    - （或 HTML 版本）：https://neovim.io/doc/user/lua-guide.html
 
-Kickstart Guide:
+Kickstart 指南：
 
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
+  TODO: 你要做的第一件事是在 Neovim 中运行 `:Tutor` 命令。
 
-    If you don't know what this means, type the following:
+    如果你不知道这是什么意思，请按以下方式输入：
       - <escape key>
       - :
       - Tutor
       - <enter key>
 
-    (If you already know the Neovim basics, you can skip this step.)
+    （如果你已经了解 Neovim 的基础知识，可以跳过这一步。）
 
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
+  完成这一步之后，你可以继续阅读**并理解** kickstart init.lua 的其余部分。
 
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
+  接下来，运行并阅读 `:help`。
+    这会打开一个帮助窗口，其中包含一些关于阅读、导航和搜索
+    内置帮助文档的基础信息。
 
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
+    当你遇到困难或困惑时，这应该是你第一个查阅的地方。
+    它是我最喜欢的 Neovim 功能之一。
 
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
+    最重要的是，我们提供了一个按键映射 "<space>sh" 用来[s]搜索[h]帮助文档，
+    当你不太确定自己在找什么的时候非常有用。
 
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
+  我在整个 init.lua 中留下了一些 `:help X` 注释
+    这些是提示，告诉你在哪里可以找到有关 Kickstart 中使用的
+    相关设置、插件或 Neovim 功能的更多信息。
 
-   NOTE: Look for lines like this
+   注意：请留意文件中形如这样的行
 
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
+    它们是为你（读者）准备的，帮助你理解正在发生的事情。
+    一旦你知道自己在做什么，可以随意删除它们，但它们应该在你
+    初次接触 Neovim 配置中的不同结构时起到指南的作用。
 
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
+如果在尝试安装 kickstart 时遇到任何错误，请运行 `:checkhealth` 获取更多信息。
 
-I hope you enjoy your Neovim journey,
+祝你 Neovim 之旅愉快，
 - TJ
 
-P.S. You can delete this when you're done too. It's your config now! :)
+P.S. 完成后你也可以把这些内容删掉。现在它是你的配置了！:)
 --]]
 
--- [[ Setting options ]]
+-- [[ 设置选项 ]]
 require 'options'
 
--- [[ Basic Keymaps ]]
+-- [[ 基础按键映射 ]]
 require 'keymaps'
 
--- [[ Set up vim.pack ]]
+-- [[ 设置 vim.pack ]]
 require 'pack'
 
--- [[ Configure and install plugins ]]
+-- [[ 配置并安装插件 ]]
 require 'plugins'
 
--- The line beneath this is called `modeline`. See `:help modeline`
+-- 下面这一行被称为 `modeline`。参见 `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

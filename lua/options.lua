@@ -1,84 +1,84 @@
--- Enable faster startup by caching compiled Lua modules
+-- 通过缓存编译后的 Lua 模块来加快启动速度
 vim.loader.enable()
 
--- Set <space> as the leader key
--- See `:help mapleader`
---  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
+-- 将 <space> 设置为 leader 键
+-- 参见 `:help mapleader`
+--  注意：必须在插件加载之前设置（否则会使用错误的 leader 键）
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
--- Set to true if you have a Nerd Font installed and selected in the terminal
+-- 如果你在终端中安装并选择了 Nerd Font，请设为 true
 vim.g.have_nerd_font = false
 
--- [[ Setting options ]]
---  See `:help vim.o`
--- NOTE: You can change these options as you wish!
---  For more options, you can see `:help option-list`
+-- [[ 设置选项 ]]
+--  参见 `:help vim.o`
+-- 注意：你可以随意修改这些选项！
+--  更多选项参见 `:help option-list`
 
--- Make line numbers default
+-- 默认显示行号
 vim.o.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
+-- 你也可以启用相对行号，有助于跳转。
+--  可以自己试试看是否喜欢！
 -- vim.o.relativenumber = true
 
--- Enable mouse mode, can be useful for resizing splits for example!
+-- 启用鼠标模式，例如调整分屏大小时会很有用！
 vim.o.mouse = 'a'
 
--- Don't show the mode, since it's already in the status line
+-- 不显示模式，因为状态栏中已经显示了
 vim.o.showmode = false
 
--- Sync clipboard between OS and Neovim.
---  Schedule the setting after `UiEnter` because it can increase startup-time.
---  Remove this option if you want your OS clipboard to remain independent.
---  See `:help 'clipboard'`
+-- 在操作系统和 Neovim 之间同步剪贴板。
+--  把设置安排在 `UiEnter` 之后，因为这可能会增加启动时间。
+--  如果你希望操作系统剪贴板保持独立，请移除该选项。
+--  参见 `:help 'clipboard'`
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 
--- Enable break indent
+-- 启用断行缩进
 vim.o.breakindent = true
 
--- Enable undo/redo changes even after closing and reopening a file
+-- 即使在关闭并重新打开文件后，也保留撤销/重做记录
 vim.o.undofile = true
 
--- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
+-- 搜索时忽略大小写，除非搜索词中包含 \C 或一个或多个大写字母
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
--- Keep signcolumn on by default
+-- 默认保持符号列开启
 vim.o.signcolumn = 'yes'
 
--- Decrease update time
+-- 减少更新时间
 vim.o.updatetime = 250
 
--- Decrease mapped sequence wait time
+-- 减少映射序列等待时间
 vim.o.timeoutlen = 300
 
--- Configure how new splits should be opened
+-- 配置新分屏的打开方式
 vim.o.splitright = true
 vim.o.splitbelow = true
 
--- Sets how neovim will display certain whitespace characters in the editor.
---  See `:help 'list'`
---  and `:help 'listchars'`
+-- 设置 Neovim 在编辑器中如何显示某些空白字符。
+--  参见 `:help 'list'`
+--  和 `:help 'listchars'`
 --
---  Notice listchars is set using `vim.opt` instead of `vim.o`.
---  It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
---   See `:help lua-options`
---   and `:help lua-guide-options`
+--  注意 listchars 是使用 `vim.opt` 而不是 `vim.o` 设置的。
+--  它与 `vim.o` 非常相似，但提供了方便操作表格的接口。
+--   参见 `:help lua-options`
+--   和 `:help lua-guide-options`
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
--- Preview substitutions live, as you type!
+-- 输入时实时预览替换！
 vim.o.inccommand = 'split'
 
--- Show which line your cursor is on
+-- 显示光标所在的行
 vim.o.cursorline = true
 
--- Minimal number of screen lines to keep above and below the cursor.
+-- 光标上方和下方保留的最少屏幕行数。
 vim.o.scrolloff = 10
 
--- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
--- instead raise a dialog asking if you wish to save the current file(s)
--- See `:help 'confirm'`
+-- 如果执行的操作会因缓冲区中有未保存的更改而失败（如 `:q`），
+-- 则弹出一个对话框，询问你是否希望保存当前文件
+-- 参见 `:help 'confirm'`
 vim.o.confirm = true
 
 -- vim: ts=2 sts=2 sw=2 et

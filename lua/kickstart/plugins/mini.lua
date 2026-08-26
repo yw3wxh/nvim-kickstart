@@ -1,24 +1,24 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
 -- [[ mini.nvim ]]
---  A collection of various small independent plugins/modules
+--  各种小型、独立插件/模块的集合
 vim.pack.add { gh 'nvim-mini/mini.nvim' }
 
--- If a nerd font is available, load the icons module for pretty icons in various plugins.
+-- 如果有 nerd font，则加载 icons 模块，为各种插件提供漂亮的图标。
 if vim.g.have_nerd_font then
   require('mini.icons').setup()
-  -- Used for backwards compatibility with plugins that require `nvim-web-devicons` (e.g. telescope.nvim)
+  -- 用于与需要 `nvim-web-devicons` 的插件（例如 telescope.nvim）保持向后兼容
   MiniIcons.mock_nvim_web_devicons()
 end
 
--- Better Around/Inside textobjects
+-- 更好的 Around/Inside 文本对象
 --
--- Examples:
---  - va)  - [V]isually select [A]round [)]paren
---  - yiiq - [Y]ank [I]nside [I]+1 [Q]uote
---  - ci'  - [C]hange [I]nside [']quote
+-- 示例：
+--  - va)  - [V]isual 选择 [A]round [)]括号
+--  - yiiq - [Y]ank [I]nside [I]+1 [Q]quote
+--  - ci'  - [C]hange [I]nside [']引号
 require('mini.ai').setup {
-  -- NOTE: Avoid conflicts with the built-in incremental selection mappings on Neovim>=0.12 (see `:help treesitter-incremental-selection`)
+  -- 注意：避免与 Neovim>=0.12 内置的增量选择映射冲突（参见 `:help treesitter-incremental-selection`）
   mappings = {
     around_next = 'aa',
     inside_next = 'ii',
@@ -26,27 +26,26 @@ require('mini.ai').setup {
   n_lines = 500,
 }
 
--- Add/delete/replace surroundings (brackets, quotes, etc.)
+-- 添加/删除/替换环绕符号（括号、引号等）
 --
--- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
--- - sd'   - [S]urround [D]elete [']quotes
+-- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]括号
+-- - sd'   - [S]urround [D]elete [']引号
 -- - sr)'  - [S]urround [R]eplace [)] [']
 require('mini.surround').setup()
 
--- Simple and easy statusline.
---  You could remove this setup call if you don't like it,
---  and try some other statusline plugin
+-- 简单易用的状态栏。
+--  如果你不喜欢它，可以移除这个 setup 调用，
+--  并尝试其他状态栏插件
 local statusline = require 'mini.statusline'
--- Set `use_icons` to true if you have a Nerd Font
+-- 如果你有 Nerd Font，请将 `use_icons` 设为 true
 statusline.setup { use_icons = vim.g.have_nerd_font }
 
--- You can configure sections in the statusline by overriding their
--- default behavior. For example, here we set the section for
--- cursor location to LINE:COLUMN
+-- 你可以通过覆盖默认行为来配置状态栏中的各个部分。
+-- 例如，这里我们把光标位置部分设置为 LINE:COLUMN
 ---@diagnostic disable-next-line: duplicate-set-field
 statusline.section_location = function() return '%2l:%-2v' end
 
--- ... and there is more!
---  Check out: https://github.com/nvim-mini/mini.nvim
+-- ... 还有更多！
+--  查看：https://github.com/nvim-mini/mini.nvim
 
 -- vim: ts=2 sts=2 sw=2 et

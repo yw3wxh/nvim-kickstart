@@ -1,59 +1,59 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ Snippet Engine ]]
+-- [[ 代码片段引擎 ]]
 
--- NOTE: You can also specify plugin using a version range for its git tag.
---  See `:help vim.version.range()` for more info
+-- 注意：你也可以使用 git 标签的版本范围来指定插件。
+--  更多信息参见 `:help vim.version.range()`
 vim.pack.add { { src = gh 'L3MON4D3/LuaSnip', version = vim.version.range '2.*' } }
 require('luasnip').setup {}
 
--- `friendly-snippets` contains a variety of premade snippets.
---    See the README about individual language/framework/plugin snippets:
+-- `friendly-snippets` 包含各种预制的代码片段。
+--   关于各语言/框架/插件片段的 README：
 --    https://github.com/rafamadriz/friendly-snippets
 --
 -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
 -- require('luasnip.loaders.from_vscode').lazy_load()
 
--- [[ Autocomplete Engine ]]
+-- [[ 自动补全引擎 ]]
 vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
 require('blink.cmp').setup {
   keymap = {
-    -- 'default' (recommended) for mappings similar to built-in completions
-    --   <c-y> to accept ([y]es) the completion.
-    --    This will auto-import if your LSP supports it.
-    --    This will expand snippets if the LSP sent a snippet.
-    -- 'super-tab' for tab to accept
-    -- 'enter' for enter to accept
-    -- 'none' for no mappings
+    -- 'default'（推荐）提供与内置补全类似的映射
+    --   <c-y> 接受（[y]es）补全。
+    --    如果你的 LSP 支持，这会自动导入。
+    --    如果 LSP 发送了代码片段，这会展开片段。
+    -- 'super-tab' 用 tab 接受
+    -- 'enter' 用回车接受
+    -- 'none' 不使用映射
     --
-    -- For an understanding of why the 'default' preset is recommended,
-    -- you will need to read `:help ins-completion`
+    -- 要理解为什么推荐 'default' 预设，
+    -- 你需要阅读 `:help ins-completion`
     --
-    -- No, but seriously. Please read `:help ins-completion`, it is really good!
+    -- 不，说真的。请阅读 `:help ins-completion`，它真的很好！
     --
-    -- All presets have the following mappings:
-    -- <tab>/<s-tab>: move to right/left of your snippet expansion
-    -- <c-space>: Open menu or open docs if already open
-    -- <c-n>/<c-p> or <up>/<down>: Select next/previous item
-    -- <c-e>: Hide menu
-    -- <c-k>: Toggle signature help
+    -- 所有预设都有以下映射：
+    -- <tab>/<s-tab>：在片段展开中向左/向右移动
+    -- <c-space>：打开菜单，如果已打开则打开文档
+    -- <c-n>/<c-p> 或 <up>/<down>：选择上一个/下一个项目
+    -- <c-e>：隐藏菜单
+    -- <c-k>：切换签名帮助
     --
-    -- See `:help blink-cmp-config-keymap` for defining your own keymap
+    -- 要定义自己的按键映射，参见 `:help blink-cmp-config-keymap`
     preset = 'default',
 
-    -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
+    -- 更高级的 Luasnip 按键映射（例如选择 choice 节点、展开），参见：
     --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
   },
 
   appearance = {
-    -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
-    -- Adjusts spacing to ensure icons are aligned
+    -- 'mono'（默认）用于 'Nerd Font Mono'，'normal' 用于 'Nerd Font'
+    -- 调整间距以确保图标对齐
     nerd_font_variant = 'mono',
   },
 
   completion = {
-    -- By default, you may press `<c-space>` to show the documentation.
-    -- Optionally, set `auto_show = true` to show the documentation after a delay.
+    -- 默认情况下，你可以按 `<c-space>` 显示文档。
+    -- 可选地，设置 `auto_show = true` 可以在延迟后自动显示文档。
     documentation = { auto_show = false, auto_show_delay_ms = 500 },
   },
 
@@ -63,16 +63,16 @@ require('blink.cmp').setup {
 
   snippets = { preset = 'luasnip' },
 
-  -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
-  -- which automatically downloads a prebuilt binary when enabled.
+  -- Blink.cmp 包含一个可选的、推荐的 rust 模糊匹配器，
+  -- 启用时会自动下载预编译的二进制文件。
   --
-  -- By default, we use the Lua implementation instead, but you may enable
-  -- the rust implementation via `'prefer_rust_with_warning'`
+  -- 默认情况下，我们使用 Lua 实现，但你可以通过
+  -- `'prefer_rust_with_warning'` 启用 rust 实现
   --
-  -- See `:help blink-cmp-config-fuzzy` for more information
+  -- 更多信息参见 `:help blink-cmp-config-fuzzy`
   fuzzy = { implementation = 'lua' },
 
-  -- Shows a signature help window while you type arguments for a function
+  -- 在输入函数参数时显示签名帮助窗口
   signature = { enabled = true },
 }
 

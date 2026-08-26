@@ -1,18 +1,18 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ Installing and Configuring Plugins ]]
+-- [[ 安装和配置插件 ]]
 --
--- To install a plugin simply call `vim.pack.add` with its git url.
--- This will download the default branch of the plugin, which will usually be `main` or `master`
--- You can also have more advanced specs, which we will talk about later.
+-- 要安装插件，只需用它的 git 地址调用 `vim.pack.add`。
+-- 这会下载插件的默认分支，通常是 `main` 或 `master`。
+-- 你也可以使用更高级的配置（spec），我们稍后会讲到。
 --
--- For most plugins its not enough to install them, you also need to call their `.setup()` to start them.
+-- 对大多数插件来说，仅仅安装是不够的，你还需要调用它们的 `.setup()` 来启用它们。
 --
--- For example, lets say we want to install `guess-indent.nvim` - a plugin for
--- automatically detecting and setting the indentation.
+-- 例如，假设我们要安装 `guess-indent.nvim` —— 一个用于
+-- 自动检测和设置缩进的插件。
 --
--- We first install it from https://github.com/NMAC427/guess-indent.nvim
--- and then call its `setup()` function to start it with default settings.
+-- 我们首先从 https://github.com/NMAC427/guess-indent.nvim 安装它，
+-- 然后调用它的 `setup()` 函数，用默认设置启用它。
 vim.pack.add { gh 'NMAC427/guess-indent.nvim' }
 require('guess-indent').setup {}
 

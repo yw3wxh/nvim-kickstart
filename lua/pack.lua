@@ -1,23 +1,22 @@
--- [[ Intro to `vim.pack` ]]
--- `vim.pack` is a new plugin manager built into Neovim,
---  which provides a Lua interface for installing and managing plugins.
+-- [[ `vim.pack` 简介 ]]
+-- `vim.pack` 是 Neovim 内置的新插件管理器，
+--  它提供了一个用于安装和管理插件的 Lua 接口。
 --
---  See `:help vim.pack`, `:help vim.pack-examples` or the
---  excellent blog post from the creator of vim.pack and mini.nvim:
+--  参见 `:help vim.pack`、`:help vim.pack-examples` 或
+--  vim.pack 和 mini.nvim 的作者写的优秀博客文章：
 --  https://echasnovski.com/blog/2026-03-13-a-guide-to-vim-pack
 --
---  To inspect plugin state and pending updates, run
+--  要检查插件状态和待处理的更新，请运行
 --    :lua vim.pack.update(nil, { offline = true })
 --
---  To update plugins, run
+--  要更新插件，请运行
 --    :lua vim.pack.update()
 --
 --
---  Throughout the rest of the config there will be examples
---  of how to install and configure plugins using `vim.pack`.
+--  在配置的其余部分中，会有如何使用 `vim.pack` 安装和配置插件的示例。
 --
---  In this section we set up some autocommands to run build
---  steps for certain plugins after they are installed or updated.
+--  在本节中，我们设置了一些自动命令，用于在特定插件安装或更新后
+--  执行其构建步骤。
 
 local function run_build(name, cmd, cwd)
   local result = vim.system(cmd, { cwd = cwd }):wait()
@@ -30,10 +29,10 @@ local function run_build(name, cmd, cwd)
   end
 end
 
--- This autocommand runs after a plugin is installed or updated and
---  runs the appropriate build command for that plugin if necessary.
+-- 这个自动命令会在插件安装或更新后运行，
+--  并在必要时为该插件执行相应的构建命令。
 --
--- See `:help vim.pack-events`
+-- 参见 `:help vim.pack-events`
 vim.api.nvim_create_autocmd('PackChanged', {
   callback = function(ev)
     local name = ev.data.spec.name

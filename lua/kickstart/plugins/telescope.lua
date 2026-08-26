@@ -1,28 +1,26 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ Fuzzy Finder (files, lsp, etc) ]]
+-- [[ 模糊查找器（文件、LSP 等）]]
 --
--- Telescope is a fuzzy finder that comes with a lot of different things that
--- it can fuzzy find! It's more than just a "file finder", it can search
--- many different aspects of Neovim, your workspace, LSP, and more!
+-- Telescope 是一个模糊查找器，内置了很多可以进行模糊查找的功能！
+-- 它不仅仅是一个"文件查找器"，它还可以搜索
+-- Neovim、你的工作区、LSP 等许多不同方面！
 --
--- There are lots of other alternative pickers (like snacks.picker, or fzf-lua)
--- so feel free to experiment and see what you like!
+-- 还有很多其他的选择器插件（比如 snacks.picker 或 fzf-lua），
+-- 所以可以随意尝试，看看你喜欢什么！
 --
--- The easiest way to use Telescope, is to start by doing something like:
+-- 使用 Telescope 最简单的方式，是从类似这样的命令开始：
 --  :Telescope help_tags
 --
--- After running this command, a window will open up and you're able to
--- type in the prompt window. You'll see a list of `help_tags` options and
--- a corresponding preview of the help.
+-- 运行这个命令后，会打开一个窗口，你可以在提示窗口中输入内容。
+-- 你会看到一个 `help_tags` 选项列表以及对应的帮助预览。
 --
--- Two important keymaps to use while in Telescope are:
---  - Insert mode: <c-/>
---  - Normal mode: ?
+-- 在 Telescope 中需要记住的两个重要按键映射是：
+--  - 插入模式：<c-/>
+--  - 普通模式：?
 --
--- This opens a window that shows you all of the keymaps for the current
--- Telescope picker. This is really useful to discover what Telescope can
--- do as well as how to actually do it!
+-- 这会打开一个窗口，显示当前 Telescope 选择器的所有按键映射。
+-- 这对于了解 Telescope 能做什么以及如何操作非常有用！
 
 ---@type (string|vim.pack.Spec)[]
 local telescope_plugins = {
@@ -32,13 +30,13 @@ local telescope_plugins = {
 }
 if vim.fn.executable 'make' == 1 then table.insert(telescope_plugins, gh 'nvim-telescope/telescope-fzf-native.nvim') end
 
--- NOTE: You can install multiple plugins at once
+-- 注意：你可以一次安装多个插件
 vim.pack.add(telescope_plugins)
 
--- See `:help telescope` and `:help telescope.setup()`
+-- 参见 `:help telescope` 和 `:help telescope.setup()`
 require('telescope').setup {
-  -- You can put your default mappings / updates / etc. in here
-  --  All the info you're looking for is in `:help telescope.setup()`
+  -- 你可以在这里放入默认的映射 / 更新 / 等等
+  --  你要找的所有信息都在 `:help telescope.setup()` 中
   --
   -- defaults = {
   --   mappings = {
@@ -51,11 +49,11 @@ require('telescope').setup {
   },
 }
 
--- Enable Telescope extensions if they are installed
+-- 如果已安装，则启用 Telescope 扩展
 pcall(require('telescope').load_extension, 'fzf')
 pcall(require('telescope').load_extension, 'ui-select')
 
--- See `:help telescope.builtin`
+-- 参见 `:help telescope.builtin`
 local builtin = require 'telescope.builtin'
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
@@ -69,51 +67,51 @@ vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Fi
 vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
 vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
--- Add Telescope-based LSP pickers when an LSP attaches to a buffer.
--- If you later switch picker plugins, this is where to update these mappings.
+-- 当 LSP 附加到缓冲区时，添加基于 Telescope 的 LSP 选择器。
+-- 如果之后更换选择器插件，这里就是需要更新这些映射的地方。
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('telescope-lsp-attach', { clear = true }),
   callback = function(event)
     local buf = event.buf
 
-    -- Find references for the word under your cursor.
+    -- 查找光标下单词的引用。
     vim.keymap.set('n', 'grr', builtin.lsp_references, { buffer = buf, desc = '[G]oto [R]eferences' })
 
-    -- Jump to the implementation of the word under your cursor.
-    -- Useful when your language has ways of declaring types without an actual implementation.
+    -- 跳转到光标下单词的实现。
+    -- 当你的语言有声明类型但没有实际实现的方式时很有用。
     vim.keymap.set('n', 'gri', builtin.lsp_implementations, { buffer = buf, desc = '[G]oto [I]mplementation' })
 
-    -- Jump to the definition of the word under your cursor.
-    -- This is where a variable was first declared, or where a function is defined, etc.
-    -- To jump back, press <C-t>.
+    -- 跳转到光标下单词的定义。
+    -- 这是变量首次声明的地方，或者函数定义的地方，等等。
+    -- 要跳回，按 <C-t>。
     vim.keymap.set('n', 'grd', builtin.lsp_definitions, { buffer = buf, desc = '[G]oto [D]efinition' })
 
-    -- Fuzzy find all the symbols in your current document.
-    -- Symbols are things like variables, functions, types, etc.
+    -- 模糊查找当前文档中的所有符号。
+    -- 符号包括变量、函数、类型等。
     vim.keymap.set('n', 'gO', builtin.lsp_document_symbols, { buffer = buf, desc = 'Open Document Symbols' })
 
-    -- Fuzzy find all the symbols in your current workspace.
-    -- Similar to document symbols, except searches over your entire project.
+    -- 模糊查找当前工作区中的所有符号。
+    -- 与文档符号类似，只是搜索范围覆盖整个项目。
     vim.keymap.set('n', 'gW', builtin.lsp_dynamic_workspace_symbols, { buffer = buf, desc = 'Open Workspace Symbols' })
 
-    -- Jump to the type of the word under your cursor.
-    -- Useful when you're not sure what type a variable is and you want to see
-    -- the definition of its *type*, not where it was *defined*.
+    -- 跳转到光标下单词的类型。
+    -- 当你不确定某个变量的类型、想查看它的*类型*定义
+    -- （而不是它在*哪里*被定义）时很有用。
     vim.keymap.set('n', 'grt', builtin.lsp_type_definitions, { buffer = buf, desc = '[G]oto [T]ype Definition' })
   end,
 })
 
--- Override default behavior and theme when searching
+-- 覆盖搜索时的默认行为和主题
 vim.keymap.set('n', '<leader>/', function()
-  -- You can pass additional configuration to Telescope to change the theme, layout, etc.
+  -- 你可以向 Telescope 传递额外的配置来更改主题、布局等。
   builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
     winblend = 10,
     previewer = false,
   })
 end, { desc = '[/] Fuzzily search in current buffer' })
 
--- It's also possible to pass additional configuration options.
---  See `:help telescope.builtin.live_grep()` for information about particular keys
+-- 也可以传递额外的配置选项。
+--  关于特定键的信息参见 `:help telescope.builtin.live_grep()`
 vim.keymap.set(
   'n',
   '<leader>s/',
@@ -126,7 +124,7 @@ vim.keymap.set(
   { desc = '[S]earch [/] in Open Files' }
 )
 
--- Shortcut for searching your Neovim configuration files
+-- 搜索你的 Neovim 配置文件的快捷方式
 vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config', follow = true } end, { desc = '[S]earch [N]eovim files' })
 
 -- vim: ts=2 sts=2 sw=2 et

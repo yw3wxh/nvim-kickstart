@@ -1,23 +1,23 @@
--- [[ Basic Keymaps ]]
---  See `:help vim.keymap.set()`
+-- [[ 基础按键映射 ]]
+--  参见 `:help vim.keymap.set()`
 
--- Clear highlights on search when pressing <Esc> in normal mode
---  See `:help hlsearch`
+-- 在普通模式下按 <Esc> 时清除搜索高亮
+--  参见 `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
--- Diagnostic Config & Keymaps
---  See `:help vim.diagnostic.Opts`
+-- 诊断配置与按键映射
+--  参见 `:help vim.diagnostic.Opts`
 vim.diagnostic.config {
   update_in_insert = false,
   severity_sort = true,
   float = { border = 'rounded', source = 'if_many' },
   underline = { severity = { min = vim.diagnostic.severity.WARN } },
 
-  -- Can switch between these as you prefer
-  virtual_text = true, -- Text shows up at the end of the line
-  virtual_lines = false, -- Text shows up underneath the line, with virtual lines
+  -- 你可以根据自己的偏好切换以下选项
+  virtual_text = true, -- 文本显示在行末
+  virtual_lines = false, -- 文本显示在行下方（使用虚拟行）
 
-  -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
+  -- 自动打开浮动窗口，方便使用 `[d` 和 `]d` 跳转时阅读错误
   jump = {
     on_jump = function(_, bufnr)
       vim.diagnostic.open_float {
@@ -31,41 +31,41 @@ vim.diagnostic.config {
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
--- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
--- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
--- is not what someone will guess without a bit more experience.
+-- 用一个更容易被发现的快捷键来退出内置终端模式。
+-- 否则，你通常需要按 <C-\><C-n>，
+-- 这在没有一定经验的情况下不太容易猜到。
 --
--- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
--- or just use <C-\><C-n> to exit terminal mode
+-- 注意：这在所有终端模拟器/tmux 等中可能不生效。请尝试自己的映射，
+-- 或者直接使用 <C-\><C-n> 退出终端模式
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- TIP: Disable arrow keys in normal mode
+-- 提示：在普通模式下禁用方向键
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
--- Keybinds to make split navigation easier.
---  Use CTRL+<hjkl> to switch between windows
+-- 让分屏导航更方便的按键绑定。
+--  使用 CTRL+<hjkl> 在窗口之间切换
 --
---  See `:help wincmd` for a list of all window commands
+--  参见 `:help wincmd` 获取所有窗口命令的列表
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
+-- 注意：某些终端存在按键冲突，或无法发送不同的按键码
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
--- [[ Basic Autocommands ]]
---  See `:help lua-guide-autocommands`
+-- [[ 基础自动命令 ]]
+--  参见 `:help lua-guide-autocommands`
 
--- Highlight when yanking (copying) text
---  Try it with `yap` in normal mode
---  See `:help vim.hl.on_yank()`
+-- 复制（yank）文本时高亮
+--  在普通模式下试试 `yap`
+--  参见 `:help vim.hl.on_yank()`
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),

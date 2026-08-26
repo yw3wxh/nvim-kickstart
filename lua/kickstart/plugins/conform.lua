@@ -1,11 +1,11 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ Formatting ]]
+-- [[ 格式化 ]]
 vim.pack.add { gh 'stevearc/conform.nvim' }
 require('conform').setup {
   notify_on_error = false,
   format_on_save = function(bufnr)
-    -- You can specify filetypes to autoformat on save here:
+    -- 你可以在这里指定保存时自动格式化的文件类型：
     local enabled_filetypes = {
       -- lua = true,
       -- python = true,
@@ -17,15 +17,15 @@ require('conform').setup {
     end
   end,
   default_format_opts = {
-    lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
+    lsp_format = 'fallback', -- 如果下面配置了外部格式化器则使用它们，否则使用 LSP 格式化。设为 `false` 可完全禁用 LSP 格式化。
   },
-  -- You can also specify external formatters in here.
+  -- 你也可以在这里指定外部格式化器。
   formatters_by_ft = {
     -- rust = { 'rustfmt' },
-    -- Conform can also run multiple formatters sequentially
+    -- Conform 也可以顺序运行多个格式化器
     -- python = { "isort", "black" },
     --
-    -- You can use 'stop_after_first' to run the first available formatter from the list
+    -- 你可以使用 'stop_after_first' 来运行列表中第一个可用的格式化器
     -- javascript = { "prettierd", "prettier", stop_after_first = true },
   },
 }
