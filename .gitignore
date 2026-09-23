@@ -12,3 +12,6 @@ spell/
 nvim-pack-lock.json
 
 .DS_Store
+
+# nvim 启动时在当前目录生成的日志，不进仓库
+nvim.log

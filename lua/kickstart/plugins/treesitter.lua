@@ -30,6 +30,39 @@ local function gh(repo) return 'https://github.com/' .. repo end
 
 vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
+-- ---------------------------------------------------------------------------
+-- ⚠ 补一件官方 kickstart 没做、但这台机器上必须做的事：
+--   把 nvim-treesitter 的"查询文件"目录挂进 runtimepath
+--
+-- 什么事：解析器（.so）只负责把代码解析成语法树；
+--   **怎么给这棵树着色**是另一批文件 —— 各语言的 highlights.scm / indents.scm。
+--   新版 nvim-treesitter 把它们放在插件自己的 **runtime/queries/** 下面，
+--   而不是插件根目录的 queries/。
+--
+-- 坑在哪：pack 机制加载插件时，只把**插件根目录**加进 runtimepath，
+--   不会自动再往下加一个 runtime/ 子目录。于是 nvim 根本看不到那些规则文件。
+--
+-- 后果（我实测出来的）：
+--   nvim 自带的 runtime 里只有 c / lua / markdown / query 四门语言的着色规则，
+--   于是 **cpp、python、bash、json 全都拿不到规则** ——
+--   解析器虽然挂上了，tree-sitter 高亮其实等于没开，
+--   显示出来的还是 vim 老式的正则高亮（函数、类型、变量全一个色）。
+--   自检办法（下面这行输出 0 就是没挂上，1 才是正常）：
+--     :lua print(#vim.api.nvim_get_runtime_file('queries/cpp/highlights.scm', true))
+--
+-- 所以这里手动补一下。以后如果换成 lazy.nvim 之类的管理器，
+--   多半也还是要写这一句（除非它帮你处理了 runtime 子目录）。
+-- ---------------------------------------------------------------------------
+do
+  -- 先从 rtp 里反查出 nvim-treesitter 装在哪个目录，不写死路径
+  local found = vim.api.nvim_get_runtime_file('lua/nvim-treesitter/init.lua', true)
+  if #found > 0 then
+    -- init.lua 往上三级就是插件根目录
+    local queries_dir = vim.fn.fnamemodify(found[1], ':h:h:h') .. '/runtime'
+    if vim.uv.fs_stat(queries_dir) and not vim.o.runtimepath:find(queries_dir, 1, true) then vim.opt.runtimepath:append(queries_dir) end
+  end
+end
+
 -- 本机已编译好的解析器（缺哪个就高亮不了哪门语言，但不会报错）
 -- markdown / markdown_inline 是给 grug-far 补的（它的界面是 markdown 写的），
 -- 顺带你自己的笔记在 nvim 里也能有高亮。

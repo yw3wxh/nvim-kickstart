@@ -12,7 +12,7 @@ local function gh(repo) return 'https://github.com/' .. repo end
 --
 -- 以及按语法单元跳转：
 --   ]m / [m   跳到下一个 / 上一个函数
---   ]] / [[   跳到下一个 / 上一个类
+--   ]C / [C   跳到下一个 / 上一个类
 --
 -- 依赖已装的 nvim-treesitter，本身是纯 Lua，无二进制。
 --
@@ -75,8 +75,14 @@ vim.keymap.set({ 'x', 'o' }, 'iP', select_textobject '@parameter.inner', { desc 
 -- ---------------------------------------------------------------------------
 vim.keymap.set({ 'n', 'x', 'o' }, ']m', goto_next '@function.outer', { desc = '下一个函数开头' })
 vim.keymap.set({ 'n', 'x', 'o' }, '[m', goto_prev '@function.outer', { desc = '上一个函数开头' })
-vim.keymap.set({ 'n', 'x', 'o' }, ']]', goto_next '@class.outer', { desc = '下一个类开头' })
-vim.keymap.set({ 'n', 'x', 'o' }, '[[', goto_prev '@class.outer', { desc = '上一个类开头' })
+
+-- ⚠ 类的跳转这里**故意不用** `]]` / `[[`（虽然插件官方示例就是这两个）。
+--   原因：nvim 0.12 自带了一组全局映射，`]]` / `[[` 已经被占去做
+--   "Jump to next/previous section"（启动时后设置的，会把我设的覆盖掉）。
+--   我实测过：设了 `]]` 之后按下去，走的仍然是 nvim 自带的跳转，类跳转根本不生效。
+--   所以换大写 `C`（Class）：既避开冲突，又能和上面的 `m`（函数）成对记。
+vim.keymap.set({ 'n', 'x', 'o' }, ']C', goto_next '@class.outer', { desc = '下一个类开头' })
+vim.keymap.set({ 'n', 'x', 'o' }, '[C', goto_prev '@class.outer', { desc = '上一个类开头' })
 
 -- ---------------------------------------------------------------------------
 -- 交换：把当前参数跟前一个 / 后一个对调，改函数签名顺序时不用删了重敲
@@ -94,6 +100,7 @@ vim.keymap.set('n', '<leader>A', function() pcall(ts_swap.swap_previous, '@param
 --   daP         删掉光标所在的那个参数
 --   <leader>a   把当前参数往后挪一位
 --   ]m          跳到下一个函数开头
+--   ]C          跳到下一个类开头
 -- ---------------------------------------------------------------------------
 
 -- vim: ts=2 sts=2 sw=2 et
