@@ -53,12 +53,13 @@ require('snacks').setup {
   --
   --   另外：默认快捷键表用的是 `Snacks.dashboard.pick(...)`，依赖 picker 模块
   --   （我们关了，跟 telescope 重复），所以 preset.keys 全换成真实命令。
-  --   图标用 ASCII 的 `>`，因为你这台机器没装 Nerd Font，图标会显示成方块；
-  --   还把默认的 `:Lazy` 入口去掉了（我们没用 lazy）。
+  --   图标用 ASCII 的 `>`，不依赖任何字体（源码可读、零乱码风险；
+  --   想要彩色 Nerd Font 图标，把下面每行的 `icon = '>'` 换成对应字符即可）。
+  --   默认的 `:Lazy` 入口已去掉（我们没用 lazy）。
   dashboard = {
     enabled = true,
     preset = {
-      -- 图标统一用 ASCII 的 `>`，不依赖任何字体
+      -- 图标统一用 ASCII 的 `>`，不依赖字体（想用 Nerd Font 图标就替换这个字段）
       keys = {
         { icon = '>', key = 'f', desc = '找文件', action = ':Telescope find_files' },
         { icon = '>', key = 'r', desc = '最近打开过的文件', action = ':Telescope oldfiles' },

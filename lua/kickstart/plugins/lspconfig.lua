@@ -123,7 +123,9 @@ vim.diagnostic.config {
   -- 只把诊断文字显示在当前行末尾，而不是所有有问题的行都显示，
   -- 否则满屏都是红色小字，很吵
   virtual_text = { current_line = true },
-  -- 行号栏的标记符号（没装 Nerd Font，所以用最朴素的字符）
+  -- 行号栏的标记符号：就用朴素的字母 E/W/I/H。
+  -- （虽然已装 Nerd Font，但诊断级别用字母反而更一目了然；
+  --   想换成图标的话把 text 改成对应的 Nerd Font 字符即可）
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = 'E',

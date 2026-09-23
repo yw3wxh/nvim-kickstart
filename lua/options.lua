@@ -10,8 +10,9 @@ vim.g.mapleader = ' '
 -- 如果 localleader 也是空格，就会和全局的 <leader>f（格式化）这类按键撞车。
 vim.g.maplocalleader = '\\'
 
--- 如果你在终端中安装并选择了 Nerd Font，请设为 true
-vim.g.have_nerd_font = false
+-- 你已在终端里装了 JetBrainsMono Nerd Font，设为 true：
+-- which-key 的按键图标、mini 状态栏的模式图标、trouble 的诊断图标都会用上。
+vim.g.have_nerd_font = true
 
 -- [[ 设置选项 ]]
 --  参见 `:help vim.o`
