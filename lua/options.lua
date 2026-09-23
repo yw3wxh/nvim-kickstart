@@ -37,21 +37,21 @@ vim.o.showmode = false
 --  参见 `:help 'clipboard'
 --
 -- ⚠ 本机没装 xclip/xsel，桌面是 **Wayland**（UKUI on Wayland，合成器 ukui-kwin_wayland）。
---   卡死真因：Wayland 下 wl-copy 拷完不退出（要一直持有剪贴板），Neovim 的 clipboard
---   provider 会等子进程结束 → 永远等不到 → 冻住。所以改用 OSC 52 剪贴板方案：
---   走终端转义序列写系统剪贴板，不依赖任何外部二进制、不启子进程，X11/Wayland/SSH/tmux 都不卡。
---   前提：你的终端支持 OSC 52（主流终端基本都支持；tmux 默认也转发）。
---   注意：OSC 52 有长度上限，超大块可能截掉；且多数终端默认不允许「回读」，
---   所以 "+y 拷贝稳，但 "+p 粘贴可能不灵（需要终端开 OSC 52 回读）。
+--   老吴实测 OSC 52 在他的终端不生效，所以走原生 wl-copy / wl-paste 剪贴板。
+--   卡死坑：Wayland 下 wl-copy 拷完默认 fork 到后台持有剪贴板，Neovim 的 clipboard
+--   provider 有时仍会等它的进程树 → "+y 卡死。所以 copy 走 scripts/wl-copy-bg.sh，
+--   里面用 `&` 再后台化一次，脚本立即退出、Neovim 不再等待；paste 用 wl-paste（读完即退，不卡）。
+--   前提：nvim 进程带 WAYLAND_DISPLAY（在 UKUI 终端里启动默认就有）。
+local cfgdir = vim.fn.stdpath 'config'
 vim.g.clipboard = {
-  name = 'OSC 52',
+  name = 'wl-clipboard (backgrounded copy)',
   copy = {
-    ['+'] = require('vim.ui.clipboard.osc52').copy '+',
-    ['*'] = require('vim.ui.clipboard.osc52').copy '*',
+    ['+'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain' },
+    ['*'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain', '--primary' },
   },
   paste = {
-    ['+'] = require('vim.ui.clipboard.osc52').paste '+',
-    ['*'] = require('vim.ui.clipboard.osc52').paste '*',
+    ['+'] = { '/usr/bin/wl-paste', '--type', 'text/plain' },
+    ['*'] = { '/usr/bin/wl-paste', '--type', 'text/plain', '--primary' },
   },
 }
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
