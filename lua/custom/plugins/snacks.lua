@@ -19,6 +19,7 @@ local function gh(repo) return 'https://github.com/' .. repo end
 --   gitbrowse   把当前行链接在浏览器里打开
 --   bufdelete   删 buffer 时不搞乱窗口布局
 --   profiler    排查"nvim 怎么变慢了"
+--   （dashboard 的 s 键）→ 调 MiniSessions.select() 选会话，见下面 preset.keys
 --
 -- 关掉的及原因：
 --   notifier / notify ← 和已装的 **noice.nvim** 是同一件事，开了会弹两遍消息
@@ -67,6 +68,7 @@ require('snacks').setup {
         { icon = '>', key = 'e', desc = '文件管理器', action = ':lua MiniFiles.open()' },
         { icon = '>', key = 'n', desc = '新建文件', action = ':ene | startinsert' },
         { icon = '>', key = 'c', desc = '改 nvim 配置', action = ":lua require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }" },
+        { icon = '>', key = 's', desc = '会话', action = ':lua MiniSessions.select()' }, -- 选/加载一个会话（mini.sessions）
         { icon = '>', key = 'q', desc = '退出', action = ':qa' },
       },
     },

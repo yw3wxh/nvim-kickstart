@@ -61,6 +61,25 @@ statusline.setup { use_icons = vim.g.have_nerd_font }
 ---@diagnostic disable-next-line: duplicate-set-field
 statusline.section_location = function() return '%2l:%-2v' end
 
+-- 会话管理：把当前窗口 / buffer / 视图状态存盘，下次一键恢复
+--
+-- 会话文件默认存到 `stdpath('data')/session/`，文件名就是会话名。
+--   :lua MiniSessions.write()         —— 保存当前会话（无参则用默认会话名）
+--   :lua MiniSessions.write('名字')    —— 按名字保存
+--   MiniSessions.select()             —— 弹出 vim.ui.select 列表选一个会话加载
+--                                        （启动页按 s 调的就是它）
+--
+-- 自动行为：
+--   autowrite = true  —— 退出时若会话已存在就自动覆盖写回
+--   （本机装的 mini.nvim 版本还没有 autosave；想让它定期自动保存就先升级 mini.nvim）
+-- 注意：nvim 启动时如果带文件名，autoread 不会硬弹会话，
+--       不带文件名进启动页时自己按 s 选一个最省事。
+require('mini.sessions').setup {
+  -- 会话目录：默认就在 data/session，这里写明确认一下
+  directory = vim.fn.stdpath 'data' .. '/session',
+  autowrite = true, -- 退出时自动写回当前会话
+}
+
 -- ... 还有更多！
 --  查看：https://github.com/nvim-mini/mini.nvim
 
