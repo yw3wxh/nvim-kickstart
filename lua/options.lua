@@ -85,4 +85,13 @@ vim.o.scrolloff = 10
 -- 参见 `:help 'confirm'`
 vim.o.confirm = true
 
+-- [[ 缩进：统一 4 个空格 ]]
+-- 全局默认 4 空格，避免不同文件出现 8 空格或 Tab 混用。
+-- 新行、>> / <<、自动缩进都按 4 空格。下面的 guess-indent 配置会
+-- 把「已有文件」的宽度也强制成 4（只保留它识别 Tab/空格的能力）。
+vim.o.tabstop = 4 -- 一个 Tab 在屏幕上占 4 列
+vim.o.shiftwidth = 4 -- 每次缩进/反缩进、自动缩进的空格数
+vim.o.softtabstop = 4 -- 编辑时按一次 Tab / Backspace 移动 4 列
+vim.o.expandtab = true -- 用空格代替真正的 Tab 字符
+
 -- vim: ts=2 sts=2 sw=2 et
