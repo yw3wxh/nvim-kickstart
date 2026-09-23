@@ -69,7 +69,11 @@ vim.o.splitbelow = true
 --   参见 `:help lua-options`
 --   和 `:help lua-guide-options`
 vim.o.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+-- ⚠ 故意不标 tab：老吴嫌 Tab 显示成 `»`（字体里像 `>>`）太碍眼。
+--   所以这里只标行尾空格和不间断空格，Tab 字符不画任何标记。
+--   代价：打开用 Tab 缩进的老文件时，肉眼看不出它用的是 Tab——
+--   要查缩进混用，用 `:set list!` 临时开一下，或看状态栏/`:retab` 报错。
+vim.opt.listchars = { trail = '·', nbsp = '␣' }
 
 -- 输入时实时预览替换！
 vim.o.inccommand = 'split'
