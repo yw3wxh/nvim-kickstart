@@ -28,10 +28,26 @@ require('mini.ai').setup {
 
 -- 添加/删除/替换环绕符号（括号、引号等）
 --
--- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]括号
--- - sd'   - [S]urround [D]elete [']引号
--- - sr)'  - [S]urround [R]eplace [)] [']
-require('mini.surround').setup()
+-- - gsaiw) - [S]urround [A]dd [I]nner [W]ord [)]括号
+-- - gsd'   - [S]urround [D]elete [']引号
+-- - gsr)'  - [S]urround [R]eplace [)] [']
+--
+-- ⚠ 注意前缀为什么是 `gs` 而不是默认的 `s`：
+--   `s` 已经被 flash.nvim 占用（见 custom/plugins/flash.lua）——
+--   flash 按 `s` 就进入搜索跳转，会直接吃掉 `sa` / `sd` / `sr`。
+--   两者都要用的话，只能让其中一个换前缀。这里让 surround 换。
+--   如果你没装 flash（把 flash.lua 删了），可以把下面的 `gs` 前缀改回 `s`。
+require('mini.surround').setup {
+  mappings = {
+    add = 'gsa', -- 加环绕符号
+    delete = 'gsd', -- 删环绕符号
+    replace = 'gsr', -- 换环绕符号
+    find = 'gsf', -- 跳到下一个环绕符号
+    find_left = 'gsF', -- 跳到上一个环绕符号
+    highlight = 'gsh', -- 临时高亮当前环绕范围
+    update_n_lines = 'gsn', -- 修改搜索范围（行数）
+  },
+}
 
 -- 简单易用的状态栏。
 --  如果你不喜欢它，可以移除这个 setup 调用，
