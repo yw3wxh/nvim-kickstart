@@ -27,9 +27,14 @@ require 'kickstart.plugins.treesitter'
 -- require 'kickstart.plugins.neo-tree'
 -- require 'kickstart.plugins.gitsigns' -- 添加 gitsigns 推荐的按键映射
 
--- 注意：你可以从 `lua/custom/plugins/*.lua` 添加自己的插件、配置等
+-- 自己加的插件放在 `lua/custom/plugins/` 目录下，一个插件一个文件。
+--  这里会加载该目录下的所有 .lua 文件（init.lua 除外），
+--  所以新增插件只要丢个文件进去就行，不用再改本文件。
 --
---  取消下面这行的注释并把你的插件添加到 `lua/custom/plugins/*.lua` 即可开始。
--- require 'custom.plugins'
+--  目前已加：
+--    - custom/plugins/noice.lua   消息/命令行美化
+--    - custom/plugins/trouble.lua 诊断列表面板
+--    - custom/plugins/cpp.lua     C/C++ 刷题辅助（生成 compile_commands.json）
+require 'custom.plugins'
 
 -- vim: ts=2 sts=2 sw=2 et

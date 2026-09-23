@@ -20,13 +20,31 @@ local function gh(repo) return 'https://github.com/' .. repo end
 --  - 符号搜索
 --  - 以及更多！
 --
--- 因此，语言服务器是需要独立于 Neovim 安装的外部工具。
--- 这就是 `mason` 及相关插件发挥作用的地方。
+-- 因此，语言服务器是需要独立于 Neovim 安装的外部工具，
+-- 需要先在机器上装好，Neovim 才能连上它们。
 --
 -- 如果你想知道 lsp 和 treesitter 的区别，可以查看一个编写得非常
 -- 出色的帮助章节：`:help lsp-vs-treesitter`
+--
+-- ---------------------------------------------------------------------------
+-- ⚠ 本文件与官方 kickstart 最大的不同：不用 Mason
+--
+-- 官方版本会用 Mason 自动下载安装语言服务器。但本机是
+-- aarch64(ARM64) + glibc 2.31，Mason 下发的预编译二进制
+-- 多半是 x86_64 或要求更高的 glibc 版本，装完直接跑不起来。
+--
+-- 所以这里**完全移除 Mason**，改用本机已经装好的服务：
+--
+--   C/C++   → clangd        （系统自带，/usr/bin/clangd）
+--   Python  → basedpyright  （npm 装到 ~/.local/share/nvim-lsp，纯 JS，无 glibc 依赖）
+--           → ruff          （~/.local/bin/ruff，负责 lint 与格式化）
+--   Lua     → lua_ls        （本机没装，装了才会启用）
+--
+-- 每个服务器都先检测可执行文件在不在，不存在就跳过，
+-- 这样缺哪个都不会在启动时报错刷屏。
+-- ---------------------------------------------------------------------------
 
--- 实用的 LSP 状态更新。
+-- 实用的 LSP 状态更新（右下角显示"正在加载 clangd…"这类提示）
 vim.pack.add { gh 'j-hui/fidget.nvim' }
 require('fidget').setup {}
 
@@ -98,28 +116,109 @@ vim.api.nvim_create_autocmd('LspAttach', {
   end,
 })
 
--- 启用以下语言服务器
---  可以随意在这里添加/删除任何你想要的 LSP。它们会被自动安装。
---  关于键及其配置方法的信息参见 `:help lsp-config`
+-- ---------------------------------------------------------------------------
+-- 诊断信息的显示方式
+-- ---------------------------------------------------------------------------
+vim.diagnostic.config {
+  -- 只把诊断文字显示在当前行末尾，而不是所有有问题的行都显示，
+  -- 否则满屏都是红色小字，很吵
+  virtual_text = { current_line = true },
+  -- 行号栏的标记符号（没装 Nerd Font，所以用最朴素的字符）
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = 'E',
+      [vim.diagnostic.severity.WARN] = 'W',
+      [vim.diagnostic.severity.INFO] = 'I',
+      [vim.diagnostic.severity.HINT] = 'H',
+    },
+  },
+  -- 输入模式下不实时刷新诊断，避免边打字边跳
+  update_in_insert = false,
+  -- 按严重程度排序，错误排在最前面
+  severity_sort = true,
+  float = {
+    border = 'rounded',
+    -- 悬浮窗口里显示诊断来源（比如 "basedpyright"），便于知道是谁报的
+    source = true,
+  },
+}
+
+-- ---------------------------------------------------------------------------
+-- 语言服务器清单
+-- ---------------------------------------------------------------------------
 ---@type table<string, vim.lsp.Config>
-local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
-  --
-  -- 有些语言（如 typescript）有完整独立的语言插件，可能很有用：
-  --    https://github.com/pmizio/typescript-tools.nvim
-  --
-  -- 但对很多配置来说，LSP（`ts_ls`）就足够好了
-  -- ts_ls = {},
+local servers = {}
 
-  stylua = {}, -- 用于格式化 Lua 代码
+-- C/C++ ----------------------------------------------------------------------
+-- 直接用系统自带的 clangd（本机是 clangd 10.0.0）。
+-- 注意：clangd 靠项目里的 compile_commands.json 才知道编译选项。
+-- 单文件刷题时没有这个文件，clangd 也能用，但可能找不到自定义头文件。
+-- 需要的话可以按 <leader>cm 生成一个（见 custom/plugins/cpp.lua）。
+if vim.fn.executable 'clangd' == 1 then
+  servers.clangd = {
+    cmd = {
+      'clangd',
+      '--background-index', -- 后台建索引，跳转定义更快
+      '--clang-tidy', -- 顺带跑 clang-tidy 静态检查
+      '--header-insertion=never', -- 不要自动插入 #include，避免乱加头文件
+      '--completion-style=detailed', -- 补全时附带函数签名等信息
+    },
+  }
+end
 
-  -- 特殊的 Lua 配置，按照 neovim 帮助文档的建议
-  lua_ls = {
+-- Python ---------------------------------------------------------------------
+-- basedpyright：类型检查 + 补全 + 悬浮文档。
+-- 它是 pyright 的增强版，用 npm 装的纯 JS 实现，
+-- 所以完全没有 aarch64 / glibc 的兼容问题。
+local basedpyright_langserver = vim.fn.expand '~/.local/share/nvim-lsp/node_modules/basedpyright/langserver.index.js'
+if vim.fn.executable 'node' == 1 and vim.uv.fs_stat(basedpyright_langserver) then
+  -- basedpyright 得知道用哪个 Python 解释器，才能找到第三方库的类型信息。
+  -- 项目里有 .venv 时它会优先用虚拟环境，这里给的是兜底值。
+  local python3 = vim.fn.exepath 'python3'
+  if python3 == '' then python3 = 'python3' end
+
+  servers.basedpyright = {
+    -- 直接让 node 去跑 langserver 的入口脚本（basedpyright 本身没有可执行二进制）
+    cmd = { 'node', basedpyright_langserver, '--stdio' },
+    settings = {
+      basedpyright = {
+        analysis = {
+          -- basic   ：只报明显的错误
+          -- standard：默认，报类型不匹配等（推荐）
+          -- strict  ：最严格，连隐式 Any 都报
+          typeCheckingMode = 'standard',
+          autoSearchPaths = true, -- 自动推测项目根目录
+          useLibraryCodeForTypes = true, -- 从第三方库源码里推断类型
+          diagnosticSeverityOverrides = {
+            -- 未使用的 import 交给 ruff（F401）来报，
+            -- 不然 basedpyright 和 ruff 会重复提示同一件事
+            reportUnusedImport = 'none',
+          },
+        },
+      },
+      -- pyright 系列通用的设置（注意是 python.*，不是 basedpyright.*）
+      python = {
+        pythonPath = python3,
+      },
+    },
+  }
+end
+
+-- ruff：极快的 linter + formatter，负责代码风格类问题。
+-- 它和 basedpyright 是分工关系：basedpyright 管类型，ruff 管风格。
+if vim.fn.executable 'ruff' == 1 then servers.ruff = {
+  cmd = { 'ruff', 'server' },
+} end
+
+-- Lua ------------------------------------------------------------------------
+-- 本机没装 lua-language-server（官方版本是靠 Mason 装的）。
+-- 这里做成"装了就启用"：如果你以后经常改 nvim 配置、想要 Lua 补全，
+-- 自己装上 lua-language-server 后这段会自动生效，没装也不会报错。
+if vim.fn.executable 'lua-language-server' == 1 then
+  servers.lua_ls = {
     on_init = function(client)
-      client.server_capabilities.documentFormattingProvider = false -- 禁用格式化（格式化由 stylua 完成）
+      -- 格式化交给 stylua（本机 /usr/local/bin/stylua），不让 lua_ls 插手
+      client.server_capabilities.documentFormattingProvider = false
 
       if client.workspace_folders then
         local path = client.workspace_folders[1].name
@@ -145,40 +244,16 @@ local servers = {
     ---@type lspconfig.settings.lua_ls
     settings = {
       Lua = {
-        format = { enable = false }, -- 禁用格式化（格式化由 stylua 完成）
+        format = { enable = false }, -- 同样交给 stylua
       },
     },
-  },
-}
+  }
+end
 
-vim.pack.add {
-  gh 'neovim/nvim-lspconfig',
-  gh 'mason-org/mason.nvim',
-  gh 'mason-org/mason-lspconfig.nvim',
-  gh 'WhoIsSethDaniel/mason-tool-installer.nvim',
-}
-
--- 自动为 Neovim 安装 LSP 和相关工具到 stdpath
-require('mason').setup {}
-
--- 在 nvim-lspconfig 服务器名称和 mason.nvim 包名称之间进行转换（例如 lua_ls <-> lua-language-server）
-require('mason-lspconfig').setup {
-  automatic_enable = false, -- 如果你希望自动启用手动安装的服务器（例如通过 :Mason / :MasonInstall 安装的），请改为 true
-}
-
--- 确保上面列出的服务器和工具已安装
---
--- 要检查已安装工具的当前状态和/或手动安装
--- 其他工具，可以运行
---    :Mason
---
--- 你可以在该菜单中按 `g?` 获取帮助。
-local ensure_installed = vim.tbl_keys(servers or {})
-vim.list_extend(ensure_installed, {
-  -- 你可以在这里添加其他希望 Mason 安装的工具
-})
-
-require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+-- ---------------------------------------------------------------------------
+-- 只装 nvim-lspconfig（提供各语言服务器的默认配置），不再装 Mason 三件套
+-- ---------------------------------------------------------------------------
+vim.pack.add { gh 'neovim/nvim-lspconfig' }
 
 for name, server in pairs(servers) do
   vim.lsp.config(name, server)

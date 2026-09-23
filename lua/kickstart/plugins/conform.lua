@@ -20,8 +20,20 @@ require('conform').setup {
     lsp_format = 'fallback', -- 如果下面配置了外部格式化器则使用它们，否则使用 LSP 格式化。设为 `false` 可完全禁用 LSP 格式化。
   },
   -- 你也可以在这里指定外部格式化器。
+  --  这里只填本机确实装好了的工具（不用 Mason 装，避免 glibc 兼容问题）。
+  --  没装的工具不要写进来，否则格式化时会报 "formatter not found"。
   formatters_by_ft = {
-    -- rust = { 'rustfmt' },
+    -- Python：ruff 既能 lint 也能 format（~/.local/bin/ruff）
+    --   按 <leader>f 会先整理 import 再格式化
+    python = { 'ruff_fix', 'ruff_format' },
+
+    -- C/C++：clang-format（/usr/bin/clang-format，随 clang 一起装的）
+    c = { 'clang-format' },
+    cpp = { 'clang-format' },
+
+    -- Lua：stylua（/usr/local/bin/stylua），用来格式化 nvim 配置本身
+    lua = { 'stylua' },
+
     -- Conform 也可以顺序运行多个格式化器
     -- python = { "isort", "black" },
     --
