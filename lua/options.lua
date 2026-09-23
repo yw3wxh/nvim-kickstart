@@ -34,7 +34,26 @@ vim.o.showmode = false
 -- 在操作系统和 Neovim 之间同步剪贴板。
 --  把设置安排在 `UiEnter` 之后，因为这可能会增加启动时间。
 --  如果你希望操作系统剪贴板保持独立，请移除该选项。
---  参见 `:help 'clipboard'`
+--  参见 `:help 'clipboard'
+--
+-- ⚠ 本机没装 xclip/xsel，桌面是 **Wayland**（UKUI on Wayland，合成器 ukui-kwin_wayland）。
+--   卡死真因：Wayland 下 wl-copy 拷完不退出（要一直持有剪贴板），Neovim 的 clipboard
+--   provider 会等子进程结束 → 永远等不到 → 冻住。所以改用 OSC 52 剪贴板方案：
+--   走终端转义序列写系统剪贴板，不依赖任何外部二进制、不启子进程，X11/Wayland/SSH/tmux 都不卡。
+--   前提：你的终端支持 OSC 52（主流终端基本都支持；tmux 默认也转发）。
+--   注意：OSC 52 有长度上限，超大块可能截掉；且多数终端默认不允许「回读」，
+--   所以 "+y 拷贝稳，但 "+p 粘贴可能不灵（需要终端开 OSC 52 回读）。
+vim.g.clipboard = {
+  name = 'OSC 52',
+  copy = {
+    ['+'] = require('vim.ui.clipboard.osc52').copy '+',
+    ['*'] = require('vim.ui.clipboard.osc52').copy '*',
+  },
+  paste = {
+    ['+'] = require('vim.ui.clipboard.osc52').paste '+',
+    ['*'] = require('vim.ui.clipboard.osc52').paste '*',
+  },
+}
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 
 -- 启用断行缩进
@@ -70,10 +89,12 @@ vim.o.splitbelow = true
 --   和 `:help lua-guide-options`
 vim.o.list = true
 -- ⚠ 故意不标 tab：老吴嫌 Tab 显示成 `»`（字体里像 `>>`）太碍眼。
---   所以这里只标行尾空格和不间断空格，Tab 字符不画任何标记。
---   代价：打开用 Tab 缩进的老文件时，肉眼看不出它用的是 Tab——
+--   注意：listchars 里**完全删掉 tab 项**会回退成默认显示 `^I`，更难看；
+--   所以用「两个空格」占位，Tab 渲染出来跟普通空格一样、肉眼看不见，
+--   同时 list 仍开着、行尾空格(trail)和不间断空格(nbsp)照常标。
+--   代价：用 Tab 缩进的老文件肉眼看不出它用的是 Tab——
 --   要查缩进混用，用 `:set list!` 临时开一下，或看状态栏/`:retab` 报错。
-vim.opt.listchars = { trail = '·', nbsp = '␣' }
+vim.opt.listchars = { tab = '  ', trail = '·', nbsp = '␣' }
 
 -- 输入时实时预览替换！
 vim.o.inccommand = 'split'
