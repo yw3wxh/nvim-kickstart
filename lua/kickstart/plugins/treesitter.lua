@@ -31,7 +31,24 @@ local function gh(repo) return 'https://github.com/' .. repo end
 vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
 -- 本机已编译好的解析器（缺哪个就高亮不了哪门语言，但不会报错）
-local installed = { 'bash', 'c', 'cpp', 'diff', 'html', 'json', 'lua', 'luadoc', 'python', 'query', 'vim' }
+-- markdown / markdown_inline 是给 grug-far 补的（它的界面是 markdown 写的），
+-- 顺带你自己的笔记在 nvim 里也能有高亮。
+-- 注意：markdown 的高亮规则（queries）nvim 运行时自带，所以只编译 .so 就够了。
+local installed = {
+  'bash',
+  'c',
+  'cpp',
+  'diff',
+  'html',
+  'json',
+  'lua',
+  'luadoc',
+  'markdown',
+  'markdown_inline',
+  'python',
+  'query',
+  'vim',
+}
 
 ---@param buf integer
 ---@param language string

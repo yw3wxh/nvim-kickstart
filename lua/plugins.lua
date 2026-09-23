@@ -38,6 +38,11 @@ require 'kickstart.plugins.treesitter'
 --    - custom/plugins/flash.lua       屏幕内快速跳转（占用 s 键，见文件内说明）
 --    - custom/plugins/yanky.lua       剪贴板历史
 --    - custom/plugins/mini-files.lua  文件管理器（用已装的 mini.nvim，无需额外下载）
+--    - custom/plugins/textobjects.lua 按语法单元操作/跳转（af/if/ac/ic/aP/iP）
+--    - custom/plugins/grug-far.lua    整个项目的搜索替换（<leader>/）
+--    - custom/plugins/snacks.lua      folke 工具箱（专注模式/草稿本/终端/缩进线等）
+--    - custom/plugins/overseer.lua    任务运行器（编译运行、gdb 终端调试）
+--    - custom/plugins/debug.lua       nvim-dap 调试（Python 可用，C++ 待 cpptools）
 require 'custom.plugins'
 
 -- vim: ts=2 sts=2 sw=2 et

@@ -5,7 +5,10 @@ vim.loader.enable()
 -- 参见 `:help mapleader`
 --  注意：必须在插件加载之前设置（否则会使用错误的 leader 键）
 vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
+-- localleader 用反斜杠（vim 惯例），**不要**跟上面设成同一个键。
+-- 原因：装了 grug-far 之后，它的窗口内开关走的是 <localleader>xxx，
+-- 如果 localleader 也是空格，就会和全局的 <leader>f（格式化）这类按键撞车。
+vim.g.maplocalleader = '\\'
 
 -- 如果你在终端中安装并选择了 Nerd Font，请设为 true
 vim.g.have_nerd_font = false
