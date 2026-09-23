@@ -249,13 +249,29 @@ vim.keymap.set('n', '<F4>', function() dap.terminate() end, { desc = 'Debug: 结
 vim.keymap.set('n', '<F7>', function() dapui.toggle() end, { desc = 'Debug: 开关调试界面' })
 vim.keymap.set('n', '<F9>', function() dap.toggle_breakpoint() end, { desc = 'Debug: 打/取消断点' })
 
--- 条件断点：只有表达式为真时才停（比如循环里 i == 50）
+-- ---------------------------------------------------------------------------
+-- 断点相关都归到 <leader>d 这一组（d = Debug）：
+--   db  普通断点（切换：再按一次取消，也就是清当前行）—— 你指定的主断点键
+--   dc  条件断点（只有条件为真才停，比如 i == 10）
+--   dl  日志断点（不停下，只在控制台打印一行，适合看循环里的值）
+--   dA  清除所有断点
+-- （注意和 snacks 的 <leader>bd 不冲突：那是删 buffer，字母顺序反过来。
+--   想清单个断点，用 db 在当前行再按一次即可——nvim-dap 没有"单行清除"的 API）
+-- ---------------------------------------------------------------------------
+vim.keymap.set('n', '<leader>db', function() dap.toggle_breakpoint() end, { desc = '[D]ebug 普通断点([B]reakpoint)' })
 vim.keymap.set(
   'n',
-  '<leader>dB',
+  '<leader>dc',
   function() dap.set_breakpoint(vim.fn.input '断点条件（比如 i == 10，可留空）: ') end,
-  { desc = '[D]ebug 条件[B]断点' }
+  { desc = '[D]ebug 条件断点([C]onditional)' }
 )
+vim.keymap.set(
+  'n',
+  '<leader>dl',
+  function() dap.set_breakpoint(nil, nil, vim.fn.input '日志内容（打印到调试控制台、不暂停）: ') end,
+  { desc = '[D]ebug 日志断点([L]og)' }
+)
+vim.keymap.set('n', '<leader>dA', function() dap.clear_breakpoints() end, { desc = '[D]ebug 清除所有断点([A]ll)' })
 
 -- 监视变量：把光标下的变量加进调试界面右侧的监视列表
 vim.keymap.set('n', '<leader>dw', function() dapui.elements.watches.add() end, { desc = '[D]ebug 加监视([W]atch)' })
@@ -265,7 +281,7 @@ vim.keymap.set('n', '<leader>dh', function() dapui.eval() end, { desc = '[D]ebug
 -- ---------------------------------------------------------------------------
 -- 怎么用（Python 为例，这个是现在就能跑的）
 -- ---------------------------------------------------------------------------
---   1) 打开一个 .py 文件，把光标放到想停的那行，按 <F9> 打个红点
+--   1) 打开一个 .py 文件，把光标放到想停的那行，按 <leader>db（或 <F9>）打个红点
 --   2) 按 <F5> 启动 → 会让你选"调试当前 Python 文件"，回车
 --   3) 程序会停在断点那行，左边自动弹出变量、调用栈
 --      F1 进函数 / F2 不进函数往下走 / F3 跳出当前函数 / F5 继续跑到下一个断点
