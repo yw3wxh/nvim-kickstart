@@ -21,7 +21,7 @@ require 'kickstart.plugins.treesitter'
 --  取消下面任意一行的注释即可启用它们（你需要重启 nvim）。
 --
 -- require 'kickstart.plugins.debug'
--- require 'kickstart.plugins.indent_line'
+require 'kickstart.plugins.indent_line' -- 彩虹缩进（indent-rainbow）
 -- require 'kickstart.plugins.lint'
 -- require 'kickstart.plugins.autopairs'
 -- require 'kickstart.plugins.neo-tree'
