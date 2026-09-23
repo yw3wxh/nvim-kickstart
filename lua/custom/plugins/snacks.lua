@@ -35,9 +35,46 @@ vim.pack.add { gh 'folke/snacks.nvim' }
 require('snacks').setup {
   -- ============ 开着的 ============
 
-  -- 启动页：显示最近打开的文件和常用快捷键，空 buffer 时的默认界面
+  -- 启动页：不带文件名打开 nvim 时显示的界面
+  --
+  -- ⚠ 这里有两个新版 snacks 的坑（v2 之后才有的，老配置没事），都跟 lazy.nvim 有关：
+  --
+  --   (1) 默认 sections 是 3 个：header / keys / **startup**。
+  --       startup 区块会直接 `require('lazy.stats')` 打印启动耗时 ——
+  --       那是 lazy.nvim 的模块，我们用的 vim.pack 压根没装，
+  --       所以一开 nvim 就报 "module 'lazy.stats' not found"。
+  --
+  --   (2) snacks 的配置合并用的是按索引覆盖数组：
+  --       我写 2 个 section 只会覆盖前 2 个，**第 3 个 startup 并不会被删掉**，
+  --       必须显式再补第 3 项、把它 `enabled = false` 才压得住
+  --       （dashboard 的 resolve 会跳过 enabled=false 的区块，见 plugins 源码 453 行）。
+  --
+  --   下面既保留了启动页，又用 `enabled = false` 把 startup 关了。
+  --
+  --   另外：默认快捷键表用的是 `Snacks.dashboard.pick(...)`，依赖 picker 模块
+  --   （我们关了，跟 telescope 重复），所以 preset.keys 全换成真实命令。
+  --   图标用 ASCII 的 `>`，因为你这台机器没装 Nerd Font，图标会显示成方块；
+  --   还把默认的 `:Lazy` 入口去掉了（我们没用 lazy）。
   dashboard = {
     enabled = true,
+    preset = {
+      -- 图标统一用 ASCII 的 `>`，不依赖任何字体
+      keys = {
+        { icon = '>', key = 'f', desc = '找文件', action = ':Telescope find_files' },
+        { icon = '>', key = 'r', desc = '最近打开过的文件', action = ':Telescope oldfiles' },
+        { icon = '>', key = 'g', desc = '搜文件内容', action = ':Telescope live_grep' },
+        { icon = '>', key = 'e', desc = '文件管理器', action = ':lua MiniFiles.open()' },
+        { icon = '>', key = 'n', desc = '新建文件', action = ':ene | startinsert' },
+        { icon = '>', key = 'c', desc = '改 nvim 配置', action = ":lua require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }" },
+        { icon = '>', key = 'q', desc = '退出', action = ':qa' },
+      },
+    },
+    -- header + 快捷键；第 3 项**必须**把 startup 显式关掉（原因见上面 (1)(2)）
+    sections = {
+      { section = 'header' },
+      { section = 'keys', gap = 1, padding = 1 },
+      { section = 'startup', enabled = false },
+    },
   },
 
   -- 缩进参考线：用竖线标出每一级缩进，Python 里特别好认
