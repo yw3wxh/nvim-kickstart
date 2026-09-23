@@ -237,21 +237,25 @@ end
 -- ---------------------------------------------------------------------------
 -- 键位
 -- ---------------------------------------------------------------------------
--- 沿用 kickstart 那套功能键（F1/F2/F3/F5/F7），再补个 F9 打断点。
--- 注意：这些键在有些终端里会被占用（比如 F1 触发终端帮助），
---      如果按了没反应，先检查终端设置。
-
-vim.keymap.set('n', '<F5>', function() dap.continue() end, { desc = 'Debug: 启动 / 继续' })
-vim.keymap.set('n', '<F1>', function() dap.step_into() end, { desc = 'Debug: 步入（进函数）' })
-vim.keymap.set('n', '<F2>', function() dap.step_over() end, { desc = 'Debug: 步过（不进函数）' })
-vim.keymap.set('n', '<F3>', function() dap.step_out() end, { desc = 'Debug: 步出（跳出当前函数）' })
-vim.keymap.set('n', '<F4>', function() dap.terminate() end, { desc = 'Debug: 结束调试' })
-vim.keymap.set('n', '<F7>', function() dapui.toggle() end, { desc = 'Debug: 开关调试界面' })
-vim.keymap.set('n', '<F9>', function() dap.toggle_breakpoint() end, { desc = 'Debug: 打/取消断点' })
+-- 调试控制键全部用 <leader>d 前缀（d = Debug），**不用功能键 F1~F12**。
+--   原因：很多终端会把 F1 抢去做帮助，不同终端对功能键的行为还不一致，
+--   而且功能键在笔记本上往往还得先按 Fn，麻烦。
+--   nvim-dap 本身不绑定任何键，这里用 d 组前缀是社区里一套常见约定。
+--
+-- 控制：
+--   dr  启动 / 继续              di  步入（进函数）
+--   do  步过（不进函数）        dO  步出（跳出当前函数）
+--   dq  结束调试                dU  开关调试界面
+vim.keymap.set('n', '<leader>dr', function() dap.continue() end, { desc = '[D]ebug 启动/继续([R]un)' })
+vim.keymap.set('n', '<leader>di', function() dap.step_into() end, { desc = '[D]ebug 步入([I]nto)' })
+vim.keymap.set('n', '<leader>do', function() dap.step_over() end, { desc = '[D]ebug 步过([O]ver)' })
+vim.keymap.set('n', '<leader>dO', function() dap.step_out() end, { desc = '[D]ebug 步出([O]ut)' })
+vim.keymap.set('n', '<leader>dq', function() dap.terminate() end, { desc = '[D]ebug 结束调试([Q]uit)' })
+vim.keymap.set('n', '<leader>dU', function() dapui.toggle() end, { desc = '[D]ebug 开关界面([U]I)' })
 
 -- ---------------------------------------------------------------------------
--- 断点相关都归到 <leader>d 这一组（d = Debug）：
---   db  普通断点（切换：再按一次取消，也就是清当前行）—— 你指定的主断点键
+-- 断点类键也都在 <leader>d 组下（上面的控制键也是）：
+--   db  普通断点（切换：再按一次取消，也就是清当前行）
 --   dc  条件断点（只有条件为真才停，比如 i == 10）
 --   dl  日志断点（不停下，只在控制台打印一行，适合看循环里的值）
 --   dA  清除所有断点
@@ -281,17 +285,17 @@ vim.keymap.set('n', '<leader>dh', function() dapui.eval() end, { desc = '[D]ebug
 -- ---------------------------------------------------------------------------
 -- 怎么用（Python 为例，这个是现在就能跑的）
 -- ---------------------------------------------------------------------------
---   1) 打开一个 .py 文件，把光标放到想停的那行，按 <leader>db（或 <F9>）打个红点
---   2) 按 <F5> 启动 → 会让你选"调试当前 Python 文件"，回车
+--   1) 打开一个 .py 文件，把光标放到想停的那行，按 <leader>db 打个红点（再按一次取消）
+--   2) 按 <leader>dr 启动 → 会让你选"调试当前 Python 文件"，回车
 --   3) 程序会停在断点那行，左边自动弹出变量、调用栈
---      F1 进函数 / F2 不进函数往下走 / F3 跳出当前函数 / F5 继续跑到下一个断点
---   4) 调试完按 F4 结束
+--      <leader>di 进函数 / <leader>do 不进函数往下走 / <leader>dO 跳出当前函数 / <leader>dr 继续跑到下一个断点
+--   4) 调试完按 <leader>dq 结束
 --
--- C++ / C 现在还不能用（缺 DAP 后端），按 <F5> 会提示没有配置。
+-- C++ / C 现在还不能用（缺 DAP 后端），按 <leader>dr 会提示没有配置。
 --   先用 overseer 的 gdb 终端方案顶着（<leader>or 里选"C++ 用 gdb 调试（终端界面）"）；
 --   想用图形化的断点调试，跑一次：
 --       bash scripts/install-codelldb.sh
---   装好重启 nvim，<F5> 就能用了。
+--   装好重启 nvim，<leader>dr 就能用了。
 -- ---------------------------------------------------------------------------
 
 -- vim: ts=2 sts=2 sw=2 et
