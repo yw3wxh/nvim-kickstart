@@ -99,7 +99,8 @@ overseer.register_template {
 --   所以暂时没法接进 nvim-dap 用图形化断点调试。
 --   这个模板是降级方案：开一个终端跑 gdb 的 TUI 界面（代码 + 命令同屏），
 --   断点靠敲命令（`b 行号`、`r`、`n`、`s`、`p 变量名`），对刷题够用。
---   等哪天 gdb 升到 14+ 或装了 cpptools，就换成 nvim-dap（见 custom/plugins/debug.lua）。
+--   想换成图形化的断点调试，跑一次 `bash scripts/install-codelldb.sh`
+--   装上 CodeLLDB 就行了（见 custom/plugins/debug.lua）。
 overseer.register_template {
   name = 'C++ 用 gdb 调试（终端界面）',
   condition = { filetype = { 'cpp', 'c' } },

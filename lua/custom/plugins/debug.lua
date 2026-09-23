@@ -8,12 +8,19 @@ local function gh(repo) return 'https://github.com/' .. repo end
 --
 -- 调试器现状（实测结论，不粉饰）：
 --   ✅ Python  → debugpy 已装好（pip），**开箱可用**
---   ❌ C++     → 本机 gdb 是 9.2，**不支持 DAP 协议**（要 gdb 14+ 才有
---                `--interpreter=dap`），而 nvim-dap 的 C++ 适配器用的是
---                微软的 cpptools，那个是二进制，需要下载但被网络挡住了
---                （GitHub release 资产走不通）。
---                → 所以 C++ 这里只**预留**配置：装了 cpptools 就自动生效，
---                  没装则用 overseer 的 gdb 终端方案（见 custom/plugins/overseer.lua）。
+--
+--   ⚠ C++     → 两条现成的路都堵着：
+--                1) **gdb 9.2 不支持 DAP**（要 gdb 14+ 才有 --interpreter=dap）
+--                2) 想用 clang 那套的 **lldb 也没有装**（系统只有 clang 10，
+--                   全盘搜不到 lldb / lldb-dap / lldb-vscode / lldb-server）
+--                → 所以 C++ 得额外装一个 DAP 后端。这里选 **CodeLLDB**
+--                  （基于 LLVM 的 lldb，Rust 写的静态链接，要求 glibc 2.18+，
+--                   对 aarch64 + glibc 2.31 比微软的 cpptools 更稳，且自带整套 lldb）。
+--
+--                装法：跑仓库里的 `scripts/install-codelldb.sh`
+--                （GitHub release 资产在这台机器下不下来，脚本里写了怎么绕）
+--                → 装好就自动生效，下面不用改；没装也不会报错，
+--                  先用 overseer 的 gdb 终端方案顶着（见 custom/plugins/overseer.lua）。
 -- ---------------------------------------------------------------------------
 
 vim.pack.add {
@@ -127,22 +134,72 @@ dap.configurations.python = {
 }
 
 -- ---------------------------------------------------------------------------
--- C++ 调试器（预留：装了 cpptools 才会启用，没装就不出现，不报错）
--- ---------------------------------------------------------------------------
--- cpptools 是微软给 VS Code 做的 C++ 调试后端，nvim-dap 的 cppdbg 适配器要用它。
--- 有 linux-arm64 版本，但这台机器下不下来（GitHub release 资产被网络挡）。
+-- C++ 调试器
 --
--- 什么时候想装，两步：
---   1) 下载：https://github.com/microsoft/vscode-cpptools/releases
---      选文件名带 linux-arm64 的 .vsix
---   2) 解压放到下面这个路径，让 OpenDebugAD7 出现在指定位置：
---        mkdir -p ~/.local/share/nvim-dap/cpptools && cd ~/.local/share/nvim-dap/cpptools
---        unzip cpptools-linux-arm64.vsix
---        chmod +x extension/debugAdapters/bin/OpenDebugAD7
---   放好之后重启 nvim，下面这段就会自动生效（不需要改这个文件）。
+-- 按优先级探测两个后端，哪个装了用哪个，都没装就静默跳过（不报错）：
+--   1) **CodeLLDB**（首选）—— 基于 LLVM 的 lldb，自带整套 lldb，不依赖系统 LLVM
+--   2) **cpptools**（备选）—— 微软给 VS Code 做的，走 gdb 的 MI
+--
+-- 两个都是二进制，都得额外装。装 CodeLLDB 用仓库里的脚本：
+--     bash scripts/install-codelldb.sh
+--   （它会下载 codelldb-linux-arm64.vsix 并解压到下面这个路径）
+-- 装好之后重启 nvim 就自动生效，不用改这个文件。
+-- ---------------------------------------------------------------------------
+local codelldb = vim.fn.expand '~/.local/share/nvim-dap/codelldb/extension/adapter/codelldb'
 local cpptools = vim.fn.expand '~/.local/share/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7'
 
-if vim.uv.fs_stat(cpptools) then
+-- 调试前先把当前文件编译出来（保证调试的是最新代码），返回可执行文件路径
+---@return string
+local function build_current_file()
+  local out = vim.fn.expand '%:p:r'
+  local src = vim.fn.expand '%:p'
+  local std = vim.g.cpp_standard or 'c++17'
+  local compiler = vim.bo.filetype == 'c' and 'gcc' or 'g++'
+  local cmd = string.format('%s -std=%s -Wall -Wextra -g -o %s %s', compiler, std, out, src)
+  vim.fn.system(cmd)
+  -- 编译失败了直接把错误显示出来，别让你对着一个旧的可执行文件调试
+  if vim.v.shell_error ~= 0 then vim.notify('编译失败，调试已中止', vim.log.levels.ERROR) end
+  return out
+end
+
+if vim.uv.fs_stat(codelldb) then
+  -- ---- CodeLLDB（推荐）----
+  -- 它是"服务器"模式：nvim 先启动 codelldb 进程，再连到它开的端口上
+  dap.adapters.codelldb = {
+    type = 'server',
+    port = '${port}',
+    executable = {
+      command = codelldb,
+      args = { '--port', '${port}' },
+    },
+  }
+
+  dap.configurations.cpp = {
+    {
+      name = '调试当前 C++ 文件（先编译再调试）',
+      type = 'codelldb',
+      request = 'launch',
+      program = build_current_file,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = false, -- true 的话一进来就停在 main 第一行
+      -- 程序的输入输出走 nvim 的终端（能交互输入）
+      terminal = 'integrated',
+    },
+    {
+      name = '调试一个已编译好的程序',
+      type = 'codelldb',
+      request = 'launch',
+      program = function() return vim.fn.input('可执行文件路径: ', vim.fn.expand '%:p:r', 'file') end,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = false,
+      terminal = 'integrated',
+    },
+  }
+  dap.configurations.c = dap.configurations.cpp -- C 共用同一套
+
+  vim.g.dap_cpp_backend = 'codelldb'
+elseif vim.uv.fs_stat(cpptools) then
+  -- ---- cpptools（备选，走 gdb 的 MI）----
   dap.adapters.cppdbg = {
     id = 'cppdbg',
     type = 'executable',
@@ -151,21 +208,12 @@ if vim.uv.fs_stat(cpptools) then
 
   dap.configurations.cpp = {
     {
-      name = '调试当前 C++ 文件（会先编译）',
+      name = '调试当前 C++ 文件（先编译再调试）',
       type = 'cppdbg',
       request = 'launch',
-      -- 启动前先编译，保证调试的是最新代码
-      preLaunchTask = 'build',
-      program = function()
-        -- 先用 g++ 编出可执行文件，再调试它
-        local out = vim.fn.expand '%:p:r'
-        local src = vim.fn.expand '%:p'
-        local std = vim.g.cpp_standard or 'c++17'
-        vim.fn.system(string.format('g++ -std=%s -Wall -Wextra -g -o %s %s', std, out, src))
-        return out
-      end,
+      program = build_current_file,
       cwd = '${workspaceFolder}',
-      stopAtEntry = false, -- 是否一进来就停在 main 的第一行
+      stopAtEntry = false,
       externalConsole = false,
       MIMode = 'gdb',
       miDebuggerPath = '/usr/bin/gdb',
@@ -178,13 +226,12 @@ if vim.uv.fs_stat(cpptools) then
       },
     },
   }
-  -- C 语言共用同一套配置
   dap.configurations.c = dap.configurations.cpp
 
-  vim.g.dap_cpp_ready = true
+  vim.g.dap_cpp_backend = 'cpptools'
 else
-  -- 没装 cpptools：给个提示，但不打扰（只在你要调试 C++ 时才说）
-  vim.g.dap_cpp_ready = false
+  -- 两个都没有：不报错，C++ 调试暂不可用（降级到 overseer 的 gdb 终端方案）
+  vim.g.dap_cpp_backend = nil
 end
 
 -- ---------------------------------------------------------------------------
@@ -224,8 +271,11 @@ vim.keymap.set('n', '<leader>dh', function() dapui.eval() end, { desc = '[D]ebug
 --      F1 进函数 / F2 不进函数往下走 / F3 跳出当前函数 / F5 继续跑到下一个断点
 --   4) 调试完按 F4 结束
 --
--- C++ 现在按 <F5> 会提示没有配置 —— 要先用 overseer 的 gdb 终端方案
---（<leader>or 里选"C++ 用 gdb 调试（终端界面）"），等 cpptools 装好再说。
+-- C++ / C 现在还不能用（缺 DAP 后端），按 <F5> 会提示没有配置。
+--   先用 overseer 的 gdb 终端方案顶着（<leader>or 里选"C++ 用 gdb 调试（终端界面）"）；
+--   想用图形化的断点调试，跑一次：
+--       bash scripts/install-codelldb.sh
+--   装好重启 nvim，<F5> 就能用了。
 -- ---------------------------------------------------------------------------
 
 -- vim: ts=2 sts=2 sw=2 et
