@@ -23,7 +23,7 @@ require 'kickstart.plugins.treesitter'
 require 'kickstart.plugins.debug' -- 调试：nvim-dap + nvim-dap-ui + Mason（手动模式）
 require 'kickstart.plugins.indent_line' -- 彩虹缩进（indent-rainbow）
 -- require 'kickstart.plugins.lint'
--- require 'kickstart.plugins.autopairs'
+require 'kickstart.plugins.autopairs' -- 自动补全括号/引号配对（输入 ( 自动补 )）
 -- require 'kickstart.plugins.neo-tree'
 -- require 'kickstart.plugins.gitsigns' -- 添加 gitsigns 推荐的按键映射
 
