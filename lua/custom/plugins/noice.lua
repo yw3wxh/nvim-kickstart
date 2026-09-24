@@ -21,8 +21,8 @@ vim.pack.add {
 require('notify').setup {
   timeout = 3000, -- 通知 3 秒后自动消失
   max_width = 80, -- 通知窗口最大宽度，避免长消息占满屏幕
-  -- 默认 notify 浮窗锚定在右上角(row=0 贴顶)。这里把整条动画每一帧的 row 都 +3，
-  -- 即把窗口整体「下移 3 行」，与屏幕最顶部留出间隙。
+  -- 默认 notify 浮窗锚定在右上角(row=0 贴顶)。这里把整条动画每一帧的 row 都 +6，
+  -- 即把窗口整体「下移 6 行」，与屏幕最顶部留出更大间隙。
   -- 注意：notify 视图走 nvim-notify 后端，窗口位置由它的 stages 决定，
   --       noice 的 views.notify.position 对 notify 后端不生效，所以只能在 nvim-notify 这层改 stages。
   -- direction 沿用 nvim-notify 默认 top_down（从上往下堆叠）。
@@ -35,9 +35,9 @@ require('notify').setup {
         local opts = fn(state, win)
         if opts and opts.row ~= nil then
           if type(opts.row) == 'number' then
-            opts.row = opts.row + 3
+            opts.row = opts.row + 6
           elseif type(opts.row) == 'table' then
-            opts.row[1] = opts.row[1] + 3 -- 动画：第 1 项是目标行号
+            opts.row[1] = opts.row[1] + 6 -- 动画：第 1 项是目标行号
           end
         end
         return opts
