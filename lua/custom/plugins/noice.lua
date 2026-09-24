@@ -21,7 +21,30 @@ vim.pack.add {
 require('notify').setup {
   timeout = 3000, -- 通知 3 秒后自动消失
   max_width = 80, -- 通知窗口最大宽度，避免长消息占满屏幕
-  stages = 'fade_in_slide_out', -- 淡入滑出的动画
+  -- 默认 notify 浮窗锚定在右上角(row=0 贴顶)。这里把整条动画每一帧的 row 都 +3，
+  -- 即把窗口整体「下移 3 行」，与屏幕最顶部留出间隙。
+  -- 注意：notify 视图走 nvim-notify 后端，窗口位置由它的 stages 决定，
+  --       noice 的 views.notify.position 对 notify 后端不生效，所以只能在 nvim-notify 这层改 stages。
+  -- direction 沿用 nvim-notify 默认 top_down（从上往下堆叠）。
+  stages = (function()
+    local fade = require('notify.stages.fade_in_slide_out')
+    local direction = 'top_down'
+    local base = fade(direction) -- 内置 fade_in_slide_out(direction) 返回 stage 函数数组
+    for i, fn in ipairs(base) do
+      base[i] = function(state, win)
+        local opts = fn(state, win)
+        if opts and opts.row ~= nil then
+          if type(opts.row) == 'number' then
+            opts.row = opts.row + 3
+          elseif type(opts.row) == 'table' then
+            opts.row[1] = opts.row[1] + 3 -- 动画：第 1 项是目标行号
+          end
+        end
+        return opts
+      end
+    end
+    return base
+  end)(),
 }
 
 require('noice').setup {
@@ -79,46 +102,19 @@ require('noice').setup {
     --   而自定义路由排在最前面。所以这条必须放在**上面那两条 skip 路由之后**——
     --   否则 "xxx 已写入"（kind 为空串）会先被这条匹配走，跳过的效果就没了。
     {
-      -- 外部命令（:! / :w !）的输出改走自定义视图 shell_output：
-      -- 停靠在右下角、上抬几行，避开屏幕最底部的 "Press any key to continue" 提示。
-      view = 'shell_output',
+      -- 外部命令（:! / :w !）的输出走默认 notify 浮窗显示。
+      -- 关键：nvim 把外部命令输出以 msg_show 事件发出，kind 是
+      --       shell_out / shell_err / shell_ret，noice 自带的那条 msg_show 路由
+      --       kind 列表里没有这三个，于是消息没被接管 → 不显示。
+      --       这里补上这三个 kind（其余项与默认 msg_show 路由等价）。
+      -- ⚠ 位置：noice 是"首个命中的路由生效"，自定义路由排最前，
+      --   所以这条必须放在上面两条 skip 路由之后，否则 "xxx 已写入" 会被误匹配。
+      view = 'notify',
       filter = {
         event = 'msg_show',
         kind = { '', 'echo', 'echomsg', 'lua_print', 'list_cmd', 'shell_out', 'shell_err', 'shell_ret' },
       },
       opts = { replace = true, merge = true, title = 'Messages' },
-    },
-  },
-
-  -- 自定义视图：外部命令（:! / :w !）的输出窗口
-  --   默认 noice 走 nvim-notify，窗口固定在右上角；输出一长就向下延伸，
-  --   底部正好被 Neovim 核心的 "Press any key to continue" 提示（屏幕最底部命令行区）盖住一部分。
-  --   这里单独给 shell 输出做一个浮动视图，停靠在右下角、但上抬几行，
-  --   永远落在 "Press any key" 提示之上；同时保留 3 秒自动消失的习惯。
-  views = {
-    shell_output = {
-      backend = 'popup', -- 用 noice 自带的浮动窗口渲染，可精确控制位置
-      relative = 'editor',
-      anchor = 'SE', -- 以南-东(右下)角为锚点：窗口从右下往左上生长，绝不会下探到屏幕底
-      position = { row = -3, col = '100%' }, -- row=-3 = 距底部 3 行，正好避开最底部的提示
-      size = {
-        width = 'auto',
-        height = 'auto',
-        max_width = 80, -- 与原来 nvim-notify 的 max_width 一致
-        max_height = 30, -- 封顶，避免极长输出顶到屏幕顶部
-      },
-      border = { style = 'rounded' },
-      format = 'notify', -- 只渲染消息正文，标题由边框显示（与默认 notify 视图一致）
-      timeout = 3000, -- 3 秒后自动消失，和原来 nvim-notify 的习惯一致
-      enter = false, -- 不抢焦点，光标留在编辑器
-      focusable = false,
-      win_options = {
-        winhighlight = { Normal = 'NoicePopup', FloatBorder = 'NoicePopupBorder' },
-        winbar = '',
-        foldenable = false,
-        wrap = true,
-        linebreak = true,
-      },
     },
   },
 
