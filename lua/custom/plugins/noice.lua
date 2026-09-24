@@ -66,6 +66,26 @@ require('noice').setup {
       filter = { event = 'msg_show', kind = 'search_count' },
       opts = { skip = true },
     },
+
+    -- 让 `:!外部命令` 的输出能正常显示（上游 2026-04 的修复，这里在**配置层**做，不改插件目录）
+    --
+    -- 现象：`:!ls` 之类跑完什么也不显示。
+    -- 原因：nvim 把外部命令的输出以 `msg_show` 事件发出，kind 是
+    --       shell_out / shell_err / shell_ret，而 noice 自带的那条 msg_show 路由
+    --       kind 列表里**没有**这三个，于是这条消息没被任何路由接管 → 不显示。
+    -- 做法：补一条和默认 msg_show 路由等价、但 kind 多带这三个 shell_*。
+    --
+    -- ⚠ 位置很关键：noice 是"**首个命中的路由生效**"（message/router.lua 里 `break`），
+    --   而自定义路由排在最前面。所以这条必须放在**上面那两条 skip 路由之后**——
+    --   否则 "xxx 已写入"（kind 为空串）会先被这条匹配走，跳过的效果就没了。
+    {
+      view = 'notify', -- 与 noice 默认 messages.view 一致（本配置未改过该项）
+      filter = {
+        event = 'msg_show',
+        kind = { '', 'echo', 'echomsg', 'lua_print', 'list_cmd', 'shell_out', 'shell_err', 'shell_ret' },
+      },
+      opts = { replace = true, merge = true, title = 'Messages' },
+    },
   },
 
   -- 消息历史最多保留多少条
