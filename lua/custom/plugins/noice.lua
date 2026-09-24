@@ -79,12 +79,46 @@ require('noice').setup {
     --   而自定义路由排在最前面。所以这条必须放在**上面那两条 skip 路由之后**——
     --   否则 "xxx 已写入"（kind 为空串）会先被这条匹配走，跳过的效果就没了。
     {
-      view = 'notify', -- 与 noice 默认 messages.view 一致（本配置未改过该项）
+      -- 外部命令（:! / :w !）的输出改走自定义视图 shell_output：
+      -- 停靠在右下角、上抬几行，避开屏幕最底部的 "Press any key to continue" 提示。
+      view = 'shell_output',
       filter = {
         event = 'msg_show',
         kind = { '', 'echo', 'echomsg', 'lua_print', 'list_cmd', 'shell_out', 'shell_err', 'shell_ret' },
       },
       opts = { replace = true, merge = true, title = 'Messages' },
+    },
+  },
+
+  -- 自定义视图：外部命令（:! / :w !）的输出窗口
+  --   默认 noice 走 nvim-notify，窗口固定在右上角；输出一长就向下延伸，
+  --   底部正好被 Neovim 核心的 "Press any key to continue" 提示（屏幕最底部命令行区）盖住一部分。
+  --   这里单独给 shell 输出做一个浮动视图，停靠在右下角、但上抬几行，
+  --   永远落在 "Press any key" 提示之上；同时保留 3 秒自动消失的习惯。
+  views = {
+    shell_output = {
+      backend = 'popup', -- 用 noice 自带的浮动窗口渲染，可精确控制位置
+      relative = 'editor',
+      anchor = 'SE', -- 以南-东(右下)角为锚点：窗口从右下往左上生长，绝不会下探到屏幕底
+      position = { row = -3, col = '100%' }, -- row=-3 = 距底部 3 行，正好避开最底部的提示
+      size = {
+        width = 'auto',
+        height = 'auto',
+        max_width = 80, -- 与原来 nvim-notify 的 max_width 一致
+        max_height = 30, -- 封顶，避免极长输出顶到屏幕顶部
+      },
+      border = { style = 'rounded' },
+      format = 'notify', -- 只渲染消息正文，标题由边框显示（与默认 notify 视图一致）
+      timeout = 3000, -- 3 秒后自动消失，和原来 nvim-notify 的习惯一致
+      enter = false, -- 不抢焦点，光标留在编辑器
+      focusable = false,
+      win_options = {
+        winhighlight = { Normal = 'NoicePopup', FloatBorder = 'NoicePopupBorder' },
+        winbar = '',
+        foldenable = false,
+        wrap = true,
+        linebreak = true,
+      },
     },
   },
 
