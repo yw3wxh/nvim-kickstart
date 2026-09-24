@@ -120,6 +120,10 @@ require('snacks').setup {
   -- 性能分析：`:lua Snacks.profiler.scratch()` 看哪段配置拖慢了启动
   profiler = { enabled = true },
 
+  -- 一键开关各类编辑器选项（diagnostics / 行号 / wrap / spell / 缩进线 / treesitter）
+  --   按键都挂在 <leader>u 前缀下（见下面键位区），对齐 LazyVim 习惯
+  toggle = { enabled = true },
+
   -- ============ 关掉的（别改，会跟别的插件打架）============
   notifier = { enabled = false }, -- 和 noice.nvim 冲突
   notify = { enabled = false }, -- 和 noice.nvim 冲突
@@ -152,6 +156,14 @@ vim.keymap.set({ 'n', 'v' }, '<leader>gB', function() Snacks.gitbrowse.open { wh
 
 -- 删 buffer（比 :bd 聪明，不会把窗口搞乱）
 vim.keymap.set('n', '<leader>bd', function() Snacks.bufdelete() end, { desc = '[B]uffer [D]elete' })
+
+-- 一键开关各类编辑器选项的「toggle」组（<leader>u 前缀，对齐 LazyVim 习惯）
+vim.keymap.set('n', '<leader>ud', function() Snacks.toggle.diagnostics() end, { desc = '[U] 诊断 [D]iagnostics' })
+vim.keymap.set('n', '<leader>un', function() Snacks.toggle.line_number() end, { desc = '[U] 行号 [N]umber' })
+vim.keymap.set('n', '<leader>uw', function() Snacks.toggle.option('wrap', { name = 'Wrap' }) end, { desc = '[U] 自动换行 [W]rap' })
+vim.keymap.set('n', '<leader>us', function() Snacks.toggle.option('spell', { name = 'Spell' }) end, { desc = '[U] 拼写检查 [S]pell' })
+vim.keymap.set('n', '<leader>ui', function() Snacks.toggle.indent() end, { desc = '[U] 缩进参考线 [I]ndent' })
+vim.keymap.set('n', '<leader>ut', function() Snacks.toggle.treesitter() end, { desc = '[U] 语法高亮 [T]reesitter' })
 
 -- ---------------------------------------------------------------------------
 -- 用法备注
