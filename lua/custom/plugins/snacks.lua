@@ -52,30 +52,32 @@ require('snacks').setup {
   --
   --   下面既保留了启动页，又用 `enabled = false` 把 startup 关了。
   --
-  --   默认快捷键表用的是 `Snacks.dashboard.pick(...)`（依赖 picker 模块，我们关了，跟
-  --   telescope 重复），所以下面用真实命令；图标用 Nerd Font（终端已配 JetBrainsMono
-  --   Nerd Font），码点取自 snacks 预设与 mini.icons，用 `vim.fn.nr2char(码点)` 生成
-  --   （nvim 的 Lua 里没有 utf8 库，不能用 utf8.char）。
-  --   快捷键不用 snacks 默认的 keys 布局（会把按键右对齐到窗口最右、短描述时中间空一大段），
-  --   改成紧凑的「文本列表」：每个快捷键是一行 text 项，左对齐、自己控制间距。
+  --   另外：默认快捷键表用的是 `Snacks.dashboard.pick(...)`，依赖 picker 模块
+  --   （我们关了，跟 telescope 重复），所以 preset.keys 全换成真实命令。
+  --   图标统一用 ASCII 的 `>`，不依赖字体（想用 Nerd Font 图标就替换这个字段）。
   --   默认的 `:Lazy` 入口已去掉（我们没用 lazy）。
+  -- ---------------------------------------------------------------------------
   dashboard = {
     enabled = true,
-    -- 启动页用「文本列表」渲染快捷键：每个快捷键是一行 text 项，左对齐、紧凑，
-    -- 不再用 snacks 默认的 keys 布局（它会把按键右对齐到窗口最右，短描述时中间空一大段）。
-    -- 图标用 Nerd Font，码点取自 snacks 预设与 mini.icons，用 vim.fn.nr2char 生成
-    -- （nvim 的 Lua 里没有 utf8 库，不能用 utf8.char）。每行格式：图标 + 空格 + 按键 + 空格 + 说明。
-    -- ⚠ 坑见文件顶部注释 (1)(2)：startup 区块必须 enabled=false 关掉，否则 require('lazy.stats') 报错。
+    preset = {
+      -- 图标统一用 ASCII 的 `>`，不依赖字体（想用 Nerd Font 图标就替换这个字段）
+      keys = {
+        { icon = '>', key = 'f', desc = '找文件', action = ':Telescope find_files' },
+        { icon = '>', key = 'r', desc = '最近打开过的文件', action = ':Telescope oldfiles' },
+        { icon = '>', key = 'g', desc = '搜文件内容', action = ':Telescope live_grep' },
+        { icon = '>', key = 'e', desc = '文件管理器', action = ':lua MiniFiles.open()' },
+        { icon = '>', key = 'n', desc = '新建文件', action = ':ene | startinsert' },
+        { icon = '>', key = 'c', desc = '改 nvim 配置', action = ":lua require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }" },
+        { icon = '>', key = 's', desc = '打开本目录会话', action = ':lua _G.load_cwd_session()' }, -- 加载当前目录的会话（mini.sessions，见 mini.lua）
+        { icon = '>', key = 'q', desc = '退出', action = ':qa' },
+      },
+    },
+    -- header + 快捷键；第 3 项**必须**把 startup 显式关掉（原因见上面 (1)(2)）
+    -- ⚠ 注意：必须用 `keys` 区块（不是 text 区块）才会给每个 key 绑键，
+    --   text 区块只支持 <cr> 点击触发，所以之前按 s 没反应的坑就是被换成了 text。
     sections = {
       { section = 'header' },
-      { text = vim.fn.nr2char(0xf002) .. ' f   找文件', action = ':Telescope find_files' },
-      { text = vim.fn.nr2char(0xf0c5) .. ' r   最近打开过的文件', action = ':Telescope oldfiles' },
-      { text = vim.fn.nr2char(0xf022) .. ' g   搜文件内容', action = ':Telescope live_grep' },
-      { text = vim.fn.nr2char(0xf024b) .. ' e   文件管理器', action = ':lua MiniFiles.open()' },
-      { text = vim.fn.nr2char(0xf15b) .. ' n   新建文件', action = ':ene | startinsert' },
-      { text = vim.fn.nr2char(0xf423) .. ' c   改 nvim 配置', action = ":lua require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }" },
-      { text = vim.fn.nr2char(0xe348) .. ' s   打开本目录会话', action = ':lua _G.load_cwd_session()' },
-      { text = vim.fn.nr2char(0xf426) .. ' q   退出', action = ':qa' },
+      { section = 'keys', gap = 1, padding = 1 },
       { section = 'startup', enabled = false },
     },
   },
