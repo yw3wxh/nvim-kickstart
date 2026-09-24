@@ -7,10 +7,14 @@
 -- nvim 主线程就被 a.wait 冻住 —— 表现就是"运行 checkhealth 就卡死"。
 --
 -- 处理：截胡 mason.health 模块的加载，把它的 check() 包一层 ——
---   进入 check() 前把 registry.refresh 临时换成 no-op，跑完这次健康检查再还原。
---   只影响 `:checkhealth` 这一次调用；mason 平时正常使用（如 :Mason）仍会联网刷新注册表。
---   其余检查项（GitHub 最新版、核心工具、各语言运行时）照常执行，不受影响。
---   代价：本次检查的"注册表是否已安装"那一项可能因没联网而显示 not installed，
+--   进入 check() 前临时替换两个会联网的调用，跑完这次健康检查再还原：
+--     ① registry.refresh      → no-op（原本 git fetch GitHub 注册表，a.wait 会冻主线程）
+--     ② providers.github
+--       .get_latest_release    → 立刻走失败分支的 stub（原本异步查 GitHub 最新版，
+--                                不冻界面但会让 headless 进程等网络回调完才退出，~35s）
+--   只影响 `:checkhealth` 这一次调用；mason 平时正常使用（如 :Mason 浏览包）仍会联网。
+--   其余检查项（核心工具、各语言运行时、本地 PATH/Providers 等）照常执行，不受影响。
+--   代价：本次检查的"注册表是否已安装""mason 最新版"两项可能因没联网而显示一般性提示，
 --         属无害的误报，不会再卡界面。
 
 local HEALTH_MOD = 'mason.health'
@@ -21,16 +25,34 @@ local function noop_refresh(cb)
   if type(cb) == 'function' then cb() end
 end
 
--- 把真实 mason.health 模块的 check() 包一层：临时替换 refresh -> 跑原 check -> 还原。
+-- 把真实 mason.health 模块的 check() 包一层：临时替换两个联网调用 -> 跑原 check -> 还原。
 local function wrap_check(mod)
   if not (mod and type(mod.check) == 'function') then return end
   local orig_check = mod.check
   mod.check = function()
+    -- ① registry.refresh -> no-op：不再去 GitHub 拉取注册表
     local registry = require('mason-registry')
     local orig_refresh = registry.refresh
     registry.refresh = noop_refresh
+
+    -- ② providers.github.get_latest_release -> 立刻走失败分支的 stub：
+    --   返回带 on_success/on_failure 的伪 future，on_failure 立即触发（只报本地版本号）。
+    --   这样就完全不碰 GitHub，headless 进程不必等网络回调，秒退。
+    --   ⚠ 真实模块名是 mason-core.providers，.github 是它里面的 GitHubProvider 子表。
+    local providers = require('mason-core.providers')
+    local orig_get = providers.github.get_latest_release
+    providers.github.get_latest_release = function()
+      local fut = {}
+      fut.on_success = function() return fut end
+      fut.on_failure = function(_, cb) pcall(cb) return fut end
+      return fut
+    end
+
     local ok, err = pcall(orig_check)
-    registry.refresh = orig_refresh -- 还原，不影响 mason 平时使用
+
+    -- 还原，不影响 mason 平时的联网（:Mason 浏览包等）
+    registry.refresh = orig_refresh
+    providers.github.get_latest_release = orig_get
     if not ok then error(err, 0) end
   end
 end
