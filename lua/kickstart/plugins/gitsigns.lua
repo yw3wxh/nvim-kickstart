@@ -1,9 +1,10 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- 这里是一个更高级的配置示例，演示了如何向 `gitsigns.nvim` 传递选项
+-- [[ gitsigns.nvim —— 行号栏显示 git 改动 + 便捷操作 ]]
 --
--- 参见 `:help gitsigns` 以了解每个配置键的作用。
--- 在侧边栏（gutter）添加与 git 相关的符号，并提供管理更改的工具
+-- 在 gutter（行号旁）用符号标出每行的增/改/删，并提供一套基于 <leader>h 的键：
+--   暂存/回退 hunk、预览、blame、diff，以及文本对象 ih（选一个 hunk）。
+-- 导航：]c / [c 跳到下一个 / 上一个改动。
 vim.pack.add { gh 'lewis6991/gitsigns.nvim' }
 require('gitsigns').setup {
   signs = {

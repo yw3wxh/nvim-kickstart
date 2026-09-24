@@ -1,6 +1,13 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ 格式化 ]]
+-- [[ conform.nvim —— 代码格式化（保存时/手动触发）]]
+--
+-- 把外部格式化器统一管起来，按文件类型派发：
+--   python → ruff（先 fix 再 format）、c/cpp → clang-format、lua → stylua
+--   （只用本机已装好的工具，不靠 Mason，避免 aarch64/glibc 兼容问题）
+-- 默认不开启「保存即格式化」：format_on_save 只对 enabled_filetypes 里的类型生效，
+--   目前列表留空；要开自动格式化，把对应类型填进 enabled_filetypes 即可。
+-- 手动格式化按 <leader>f（异步）。
 vim.pack.add { gh 'stevearc/conform.nvim' }
 require('conform').setup {
   notify_on_error = false,

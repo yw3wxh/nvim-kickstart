@@ -1,11 +1,12 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- [[ 配色方案 ]]
--- 你可以轻松更换成其他配色方案。
--- 修改下面配色方案插件的名称，然后把下面的命令改成
--- 加载对应名称的配色方案。
+-- [[ tokyonight —— 默认配色方案（实际被 gruvbox 覆盖）]]
 --
--- 如果你想查看已安装的配色方案，可以使用 `:Telescope colorscheme`。
+-- 这是 kickstart 自带的默认主题。我们后来装了 gruvbox
+--   （见 custom/plugins/gruvbox.lua），它在 custom 目录加载、比本文件晚，
+--   会用 gruvbox 覆盖掉这里的 tokyonight-night。
+-- 其它风格：tokyonight-storm / -moon / -day，把下面 colorscheme 改掉即可；
+-- 想换回 tokyonight：把 gruvbox.lua 末尾的 colorscheme 注释掉即可。
 vim.pack.add { gh 'folke/tokyonight.nvim' }
 ---@diagnostic disable-next-line: missing-fields
 require('tokyonight').setup {

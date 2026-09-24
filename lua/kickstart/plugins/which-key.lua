@@ -1,6 +1,12 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- 用于显示待处理按键绑定的实用插件。
+-- [[ which-key.nvim —— 按键提示面板 ]]
+--
+-- 按下 <leader> 等前缀键后，弹出该组下所有可用键及说明（delay=0 即立即）。
+-- 图标：装了 Nerd Font 就显示图标（icons.mappings = have_nerd_font）。
+-- spec 里登记的是「按键组」名字——新加的每个 <leader>x 组都要来补一行，
+--   否则 which-key 只会显示没说明的散键。下面 groups 分两半：
+--   上面是 kickstart 自带，下面（↓↓↓ 自己加的插件）是 custom/plugins 各插件对应的组。
 vim.pack.add { gh 'folke/which-key.nvim' }
 require('which-key').setup {
   -- 按下按键到打开 which-key 之间的延迟（毫秒）

@@ -1,3 +1,12 @@
+-- [[ 自动补全 + 代码片段引擎（blink.cmp + LuaSnip）]]
+--
+-- 本文件装两样东西：
+--   1) blink.cmp —— 自动补全（LSP / 路径 / 代码片段三路来源）。模糊匹配用纯 Lua 实现，
+--      因为 rust 匹配器需下载预编译二进制，本机 aarch64/glibc 2.31 不保险，故关闭。
+--   2) LuaSnip   —— 代码片段引擎（个人片段放 ~/.config 下；friendly-snippets 暂未启用）。
+-- 基本配置：补全预设 'default'（<c-y> 接受、<tab> 在片段里移动占位符），
+--   签名帮助开启，文档悬浮窗不自动弹（<c-space> 手动开），外观用 Nerd Font mono 变体。
+
 local function gh(repo) return 'https://github.com/' .. repo end
 
 -- [[ 代码片段引擎 ]]

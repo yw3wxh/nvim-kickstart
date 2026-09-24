@@ -1,4 +1,9 @@
--- 即使在空行上也显示缩进参考线
+-- [[ indent-blankline (ibl) —— 缩进参考线 + 彩虹配色 ]]
+--
+-- 在缩进处画竖直参考线，每一级按层级循环上色（indent-rainbow 风格），
+-- 比单色参考线更容易看清代码块的嵌套深度。
+-- 配色组（RainbowRed…RainbowCyan）在 HIGHLIGHT_SETUP 钩子里定义，切 colorscheme 时自动重置。
+-- ⚠ 本文件之前在 plugins.lua 里被注释掉，导致彩虹缩进一直没生效；现已启用。
 
 -- 启用 `lukas-reineke/indent-blankline.nvim`
 -- 参见 `:help ibl`

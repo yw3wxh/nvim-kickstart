@@ -1,4 +1,8 @@
--- Linting（代码检查）
+-- [[ nvim-lint —— 代码语法/风格检查（Lint）]]
+--
+-- 在 BufEnter / BufWritePost / InsertLeave 时自动跑对应语言的 linter。
+-- 当前只给 markdown 配了 markdownlint（工具需单独装好，否则会报 "not found"）。
+-- 想加别的语言：往 linters_by_ft 里加即可（注意对应工具得先装好）。
 
 vim.pack.add { 'https://github.com/mfussenegger/nvim-lint' }
 
