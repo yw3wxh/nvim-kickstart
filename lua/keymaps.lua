@@ -5,6 +5,13 @@
 --  参见 `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- 全局 <C-s> 保存当前文件（普通 / 插入 / 可视 / 选择 模式都生效）
+--  用 <cmd>write<cr> 而不是 :w<CR>，好处是插入模式下保存后**不会退出插入态**，手不用挪。
+--  ⚠ 坑：很多终端里 Ctrl+S 默认是 XOFF 流控（按下会"冻结"屏幕输出）。
+--     Neovim 进 TUI 时会把终端设为原始模式、已禁用 IXON，所以能正常收到这个键；
+--     万一你在某终端按 Ctrl+S 屏幕卡住不动、按 Ctrl+Q 才恢复，那是终端流控，不是这里的问题。
+vim.keymap.set({ 'n', 'i', 'v', 's' }, '<C-s>', '<cmd>write<cr>', { desc = '保存当前文件 [C-s]' })
+
 -- 诊断配置与按键映射
 --  参见 `:help vim.diagnostic.Opts`
 vim.diagnostic.config {
