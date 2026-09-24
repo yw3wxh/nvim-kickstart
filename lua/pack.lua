@@ -51,7 +51,10 @@ vim.api.nvim_create_autocmd('PackChanged', {
 
     if name == 'nvim-treesitter' then
       if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
-      vim.cmd 'TSUpdate'
+      -- ⚠ 不调用 TSUpdate：本机解析器是本地预编译好的 .so（见 treesitter.lua），
+      --   这里一旦联网去 GitHub 下载，在受限网络下会被卡住；而且外面包着同步
+      --   的 vim.system(...):wait()，会直接把 nvim 主线程冻死。更新 treesitter
+      --   后想重编译解析器，手动按 treesitter.lua 注释里的办法本地 gcc 编即可。
       return
     end
   end,
