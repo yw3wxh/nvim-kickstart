@@ -20,7 +20,7 @@ require 'kickstart.plugins.treesitter'
 --  以下是我在 Kickstart 仓库中包含的一些示例插件。
 --  取消下面任意一行的注释即可启用它们（你需要重启 nvim）。
 --
--- require 'kickstart.plugins.debug'
+require 'kickstart.plugins.debug' -- 调试：nvim-dap + nvim-dap-ui + Mason（手动模式）
 require 'kickstart.plugins.indent_line' -- 彩虹缩进（indent-rainbow）
 -- require 'kickstart.plugins.lint'
 -- require 'kickstart.plugins.autopairs'
@@ -42,8 +42,7 @@ require 'kickstart.plugins.indent_line' -- 彩虹缩进（indent-rainbow）
 --    - custom/plugins/grug-far.lua    整个项目的搜索替换（<leader>sR / <leader>*）
 --    - custom/plugins/snacks.lua      folke 工具箱（专注模式/草稿本/终端/缩进线等）
 --    - custom/plugins/overseer.lua    任务运行器（编译运行、gdb 终端调试）
---    - custom/plugins/debug.lua       nvim-dap 调试（Python 开箱可用；
---                                     C++ 要先跑 scripts/install-codelldb.sh 装后端）
+--   （调试 nvim-dap 已从 custom 搬到 kickstart/plugins/debug.lua 并启用，见上面第 23 行）
 require 'custom.plugins'
 
 -- vim: ts=2 sts=2 sw=2 et
