@@ -163,8 +163,10 @@ dap.configurations.python = {
 --   （它会下载 codelldb-linux-arm64.vsix 并解压到下面这个路径）
 -- 装好之后重启 nvim 就自动生效，不用改这个文件。
 -- ---------------------------------------------------------------------------
-local codelldb = vim.fn.expand '~/.local/share/nvim-dap/codelldb/extension/adapter/codelldb'
-local cpptools = vim.fn.expand '~/.local/share/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7'
+-- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都通用
+local data = vim.fn.stdpath 'data'
+local codelldb = data .. '/nvim-dap/codelldb/extension/adapter/codelldb'
+local cpptools = data .. '/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7'
 
 -- 调试前先把当前文件编译出来（保证调试的是最新代码），返回可执行文件路径
 ---@return string
@@ -234,7 +236,7 @@ elseif vim.uv.fs_stat(cpptools) then
       stopAtEntry = false,
       externalConsole = false,
       MIMode = 'gdb',
-      miDebuggerPath = '/usr/bin/gdb',
+      miDebuggerPath = vim.fn.exepath 'gdb', -- 不再写死 /usr/bin/gdb，native Linux / WSL 都能找到
       setupCommands = {
         {
           text = '-enable-pretty-printing',

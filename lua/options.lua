@@ -36,26 +36,54 @@ vim.o.showmode = false
 --  如果你希望操作系统剪贴板保持独立，请移除该选项。
 --  参见 `:help 'clipboard'
 --
--- ⚠ 本机没装 xclip/xsel，桌面是 **Wayland**（UKUI on Wayland，合成器 ukui-kwin_wayland）。
---   老吴实测 OSC 52 在他的终端不生效，所以走原生 wl-copy / wl-paste 剪贴板。
---   卡死坑：Wayland 下 wl-copy 拷完默认 fork 到后台持有剪贴板，Neovim 的 clipboard
---   provider 有时仍会等它的进程树 → "+y 卡死。所以 copy 走 scripts/wl-copy-bg.sh，
---   里面用 `&` 再后台化一次，脚本立即退出、Neovim 不再等待；paste 用 wl-paste（读完即退，不卡）。
---   前提：nvim 进程带 WAYLAND_DISPLAY（在 UKUI 终端里启动默认就有）。
-local cfgdir = vim.fn.stdpath 'config'
-vim.g.clipboard = {
-  name = 'wl-clipboard (backgrounded copy)',
-  copy = {
-    ['+'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain' },
-    ['*'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain', '--primary' },
-  },
-  paste = {
-    -- 用带超时+自动补 WAYLAND_DISPLAY 的包装脚本：剪贴板为空时 wl-paste 会一直阻塞，
-    -- 那样普通 p 粘贴就会把 nvim 主线程拖死、连 :qa 都退不出。脚本 1 秒超时即返回空，绝不卡死。
-    ['+'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain' },
-    ['*'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain', '--primary' },
-  },
-}
+-- 操作系统判断：WSL 里 Neovim 同样跑在 Linux 用户态（has('linux') 也是 true），
+-- 必须单独识别 WSL——WSL 没有 Wayland/X，剪贴板要走和 Windows 互通的方案。
+local is_wsl = (vim.fn.has('wsl') == 1)
+  or (vim.fn.filereadable('/proc/version') == 1
+    and (vim.fn.readfile('/proc/version')[1] or ''):lower():match('microsoft') ~= nil)
+local is_linux = vim.fn.has('linux') == 1 and not is_wsl
+
+if is_wsl then
+  -- WSL：没有 Wayland/X，剪贴板和 Windows 互通，交给 PowerShell。
+  --   copy 让 Neovim 把文本从 stdin 喂给 Set-Clipboard；paste 用 Get-Clipboard 读回来。
+  --   优先 powershell.exe，没有就退而用 pwsh.exe（PowerShell 7）。
+  local win_clip = (vim.fn.executable 'powershell.exe' == 1 and 'powershell.exe')
+    or (vim.fn.executable 'pwsh.exe' == 1 and 'pwsh.exe')
+    or 'powershell.exe'
+  vim.g.clipboard = {
+    name = 'WSL → Windows 剪贴板',
+    copy = {
+      ['+'] = { win_clip, '-NoProfile', '-Command', 'Set-Clipboard -Value $input' },
+      ['*'] = { win_clip, '-NoProfile', '-Command', 'Set-Clipboard -Value $input' },
+    },
+    paste = {
+      ['+'] = { win_clip, '-NoProfile', '-Command', 'Get-Clipboard' },
+      ['*'] = { win_clip, '-NoProfile', '-Command', 'Get-Clipboard' },
+    },
+  }
+elseif is_linux then
+  -- ⚠ 本机没装 xclip/xsel，桌面是 **Wayland**（UKUI on Wayland，合成器 ukui-kwin_wayland）。
+  --   老吴实测 OSC 52 在他的终端不生效，所以走原生 wl-copy / wl-paste 剪贴板。
+  --   卡死坑：Wayland 下 wl-copy 拷完默认 fork 到后台持有剪贴板，Neovim 的 clipboard
+  --   provider 有时仍会等它的进程树 → "+y 卡死。所以 copy 走 scripts/wl-copy-bg.sh，
+  --   里面用 `&` 再后台化一次，脚本立即退出、Neovim 不再等待；paste 用 wl-paste（读完即退，不卡）。
+  --   前提：nvim 进程带 WAYLAND_DISPLAY（在 UKUI 终端里启动默认就有）。
+  local cfgdir = vim.fn.stdpath 'config'
+  vim.g.clipboard = {
+    name = 'wl-clipboard (backgrounded copy)',
+    copy = {
+      ['+'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain' },
+      ['*'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain', '--primary' },
+    },
+    paste = {
+      -- 用带超时+自动补 WAYLAND_DISPLAY 的包装脚本：剪贴板为空时 wl-paste 会一直阻塞，
+      -- 那样普通 p 粘贴就会把 nvim 主线程拖死、连 :qa 都退不出。脚本 1 秒超时即返回空，绝不卡死。
+      ['+'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain' },
+      ['*'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain', '--primary' },
+    },
+  }
+end
+-- Windows / macOS 不设置 vim.g.clipboard，交给 Neovim 自带实现
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 
 -- 启用断行缩进

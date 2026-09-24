@@ -172,11 +172,13 @@ end
 -- basedpyright：类型检查 + 补全 + 悬浮文档。
 -- 它是 pyright 的增强版，用 npm 装的纯 JS 实现，
 -- 所以完全没有 aarch64 / glibc 的兼容问题。
-local basedpyright_langserver = vim.fn.expand '~/.local/share/nvim-lsp/node_modules/basedpyright/langserver.index.js'
+-- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都能正确定位
+local basedpyright_langserver = vim.fn.stdpath('data') .. '/nvim-lsp/node_modules/basedpyright/langserver.index.js'
 if vim.fn.executable 'node' == 1 and vim.uv.fs_stat(basedpyright_langserver) then
   -- basedpyright 得知道用哪个 Python 解释器，才能找到第三方库的类型信息。
   -- 项目里有 .venv 时它会优先用虚拟环境，这里给的是兜底值。
   local python3 = vim.fn.exepath 'python3'
+  if python3 == '' then python3 = vim.fn.exepath 'python' end -- Windows 上解释器常叫 python
   if python3 == '' then python3 = 'python3' end
 
   servers.basedpyright = {
