@@ -43,8 +43,8 @@ require('mason-nvim-dap').setup {
 -- 调试界面
 -- ---------------------------------------------------------------------------
 dapui.setup {
-  -- 用普通字符做图标，避免没装 Nerd Font 时显示成一堆方框
-  icons = { expanded = '-', collapsed = '+', current_frame = '*' },
+  -- 用更可能在各种终端正常显示的图标字符（本机已装 Nerd Font，渲染没问题）
+  icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
 
   -- 布局：左侧看变量/调用栈，底部看终端输出和断点
   layouts = {
@@ -66,20 +66,31 @@ dapui.setup {
   },
 
   controls = {
-    -- 底部那排播放/暂停按钮，同样用朴素字符
     icons = {
-      pause = 'II',
-      play = '>',
-      step_into = '>',
-      step_over = '>>',
-      step_out = '<',
-      step_back = '<<',
-      run_last = '>>|',
-      terminate = 'X',
-      disconnect = 'x',
+      pause = '⏸',
+      play = '▶',
+      step_into = '⏎',
+      step_over = '⏭',
+      step_out = '⏮',
+      step_back = 'b',
+      run_last = '▶▶',
+      terminate = '⏹',
+      disconnect = '⏏',
     },
   },
 }
+
+-- 断点图标：本机已装 Nerd Font，用原版图标字形（不再是字符占位）
+vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
+vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
+local breakpoint_icons = vim.g.have_nerd_font
+    and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
+  or { Breakpoint = '●', BreakpointCondition = '⊜', BreakpointRejected = '⊘', LogPoint = '◆', Stopped = '⭔' }
+for type, icon in pairs(breakpoint_icons) do
+  local tp = 'Dap' .. type
+  local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
+  vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
+end
 
 -- 调试开始/结束时自动开合界面（省得手动开关）
 dap.listeners.after.event_initialized['dapui_config'] = dapui.open
