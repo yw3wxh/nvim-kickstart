@@ -50,8 +50,10 @@ vim.g.clipboard = {
     ['*'] = { cfgdir .. '/scripts/wl-copy-bg.sh', '--type', 'text/plain', '--primary' },
   },
   paste = {
-    ['+'] = { '/usr/bin/wl-paste', '--type', 'text/plain' },
-    ['*'] = { '/usr/bin/wl-paste', '--type', 'text/plain', '--primary' },
+    -- 用带超时+自动补 WAYLAND_DISPLAY 的包装脚本：剪贴板为空时 wl-paste 会一直阻塞，
+    -- 那样普通 p 粘贴就会把 nvim 主线程拖死、连 :qa 都退不出。脚本 1 秒超时即返回空，绝不卡死。
+    ['+'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain' },
+    ['*'] = { cfgdir .. '/scripts/wl-paste-bg.sh', '--type', 'text/plain', '--primary' },
   },
 }
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
