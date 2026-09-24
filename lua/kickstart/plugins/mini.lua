@@ -61,24 +61,69 @@ statusline.setup { use_icons = vim.g.have_nerd_font }
 ---@diagnostic disable-next-line: duplicate-set-field
 statusline.section_location = function() return '%2l:%-2v' end
 
--- 会话管理：把当前窗口 / buffer / 视图状态存盘，下次一键恢复
+-- 会话管理：每个「启动 nvim 的目录」自动存一份会话，启动页按 s 一键恢复当前目录的会话
 --
--- 会话文件默认存到 `stdpath('data')/session/`，文件名就是会话名。
---   :lua MiniSessions.write()         —— 保存当前会话（无参则用默认会话名）
---   :lua MiniSessions.write('名字')    —— 按名字保存
---   MiniSessions.select()             —— 弹出 vim.ui.select 列表选一个会话加载
---                                        （启动页按 s 调的就是它）
+-- 会话名 = 当前工作目录（cwd）的编码（把 / 等非文件名字符转成 %XX，保证唯一且合法）。
+--   例如 /home/user/proj  →  会话文件 %2Fhome%2Fuser%2Fproj.vim，放在 stdpath('data')/session/。
 --
--- 自动行为：
---   autowrite = true  —— 退出时若会话已存在就自动覆盖写回
---   （本机装的 mini.nvim 版本还没有 autosave；想让它定期自动保存就先升级 mini.nvim）
--- 注意：nvim 启动时如果带文件名，autoread 不会硬弹会话，
---       不带文件名进启动页时自己按 s 选一个最省事。
-require('mini.sessions').setup {
+-- 自动保存：nvim 退出时（VimLeavePre）自动把「当前目录」的会话写盘（覆盖写，无则创建）。
+--   - 只在确实打开了文件时才存（纯启动页、只开着 dashboard 时不存，避免把空页存进去）。
+--   - 带了文件名启动（nvim foo.cpp）时不自动存，避免污染目录会话。
+--
+-- 启动页按 s：直接加载「当前目录」对应的会话（有则恢复，无则提示「还没有会话」），
+--   不再弹列表选（见 custom/plugins/snacks.lua 里 dashboard 的 s 键）。
+--
+-- 手动用法：
+--   :lua MiniSessions.write('名字')   —— 按名字保存
+--   MiniSessions.select()             —— 弹出列表手动选/加载一个会话
+local MiniSessions = require('mini.sessions')
+
+-- 把任意目录路径编码成合法且唯一的会话文件名（不含 /，避免和目录分隔符混淆）
+local function session_name_for_cwd()
+  local cwd = vim.fn.getcwd()
+  return cwd:gsub('[^A-Za-z0-9._-]', function(c)
+    return string.format('%%%02X', string.byte(c))
+  end)
+end
+
+MiniSessions.setup {
   -- 会话目录：默认就在 data/session，这里写明确认一下
   directory = vim.fn.stdpath 'data' .. '/session',
-  autowrite = true, -- 退出时自动写回当前会话
+  -- 自动保存交给我们自己的 VimLeavePre（按 cwd 存），这里关掉内置 autowrite
+  autowrite = false,
+  -- 自动存/读都别刷消息，保持安静
+  verbose = { read = false, write = false, delete = false },
 }
+
+-- 退出 nvim 时，把「当前目录」的会话自动写盘
+vim.api.nvim_create_autocmd('VimLeavePre', {
+  desc = '自动保存当前目录的会话（mini.sessions）',
+  callback = function()
+    -- 带了文件名启动时不自动存（nvim foo.cpp 这种），避免污染目录会话
+    if vim.fn.argc() > 0 then return end
+    -- 只有真正打开了文件才存：纯启动页（只有 dashboard 缓冲）不存，免得把空页存进去
+    local has_file = false
+    for _, b in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.bo[b].buflisted and vim.api.nvim_buf_get_name(b) ~= '' then
+        has_file = true
+        break
+      end
+    end
+    if not has_file then return end
+    pcall(MiniSessions.write, session_name_for_cwd(), { force = true })
+  end,
+})
+
+-- 供启动页 s 键调用：打开「当前目录」的会话（有则加载，无则提示）
+function _G.load_cwd_session()
+  local name = session_name_for_cwd()
+  local path = MiniSessions.config.directory .. '/' .. name .. '.vim'
+  if MiniSessions.detected[name] ~= nil or vim.fn.filereadable(path) == 1 then
+    MiniSessions.read(name, { force = true })
+  else
+    vim.notify('当前目录还没有会话：' .. vim.fn.getcwd(), vim.log.levels.INFO)
+  end
+end
 
 -- ... 还有更多！
 --  查看：https://github.com/nvim-mini/mini.nvim
