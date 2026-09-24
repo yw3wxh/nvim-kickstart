@@ -15,3 +15,7 @@ nvim-pack-lock.json
 
 # nvim 启动时在当前目录生成的日志，不进仓库
 nvim.log
+
+# codelldb 调试器二进制：由 scripts/install-codelldb.sh 下载解压得到（~51MB），
+# 属可重新生成的产物，不进仓库（避免仓库凭空多 51M）
+scripts/*.vsix
