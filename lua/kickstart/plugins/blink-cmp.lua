@@ -52,6 +52,26 @@ require('blink.cmp').setup {
     -- 要定义自己的按键映射，参见 `:help blink-cmp-config-keymap`
     preset = 'default',
 
+    -- ⚠ 回车接受补全 —— 'default' 预设**没有**这条，所以不补的话按回车只是换行。
+    --
+    --   现象：敲 usnam 弹出候选项，按回车却只是换行，补全没被接受。
+    --   原因：blink.cmp 的 'default' 预设压根没给 <CR> 绑命令
+    --         （见插件源码 lua/blink/cmp/keymap/presets.lua 里 default 那一段：
+    --          接受补全的是 <C-y>，回车不在其中）。
+    --
+    --   这里补一条：菜单开着且有选中项 → 接受；否则 fallback（走原本的回车行为）。
+    --   fallback 很关键：它把键**交还给原本的映射**，也就是 nvim-autopairs 的 <CR>
+    --   （在括号中间回车时把右括号挪到下一行），而不是退化成干巴巴的换行。
+    --
+    --   为什么用 'accept' 而不是 'select_and_accept'：
+    --     accept             = 接受当前选中项；没选中就什么都不做 → 交给 fallback
+    --     select_and_accept  = 没选中时**强制**选第一项再接受
+    --   本机默认 preselect = true（自动预选第一项），所以 accept 够用。
+    --   改 select_and_accept 的代价：只要菜单开着，你想换行也会被塞进第一项。
+    --
+    --   其它接受方式不受影响：<C-y> 接受；<Tab> 在片段占位符之间前进。
+    ['<CR>'] = { 'accept', 'fallback' },
+
     -- 更高级的 Luasnip 按键映射（例如选择 choice 节点、展开），参见：
     --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
   },
