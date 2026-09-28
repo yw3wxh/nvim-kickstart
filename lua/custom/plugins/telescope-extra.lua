@@ -59,7 +59,7 @@ vim.keymap.set('n', '<leader>sz', function()
     search_dirs = { dir },
     prompt_title = 'Grep in ' .. short(dir),
   }
-end, { desc = '[S]earch 当前文件所在[目录]' })
+end, { desc = '搜内容（当前文件所在目录）' })
 
 -- ---------------------------------------------------------------------------
 -- <leader>sF  只在当前文件所在目录里找【文件名】
@@ -76,7 +76,7 @@ vim.keymap.set('n', '<leader>sF', function()
     cwd = dir,
     prompt_title = 'Files in ' .. short(dir),
   }
-end, { desc = '[S]earch 当前目录里的[文件]' })
+end, { desc = '找文件（当前文件所在目录）' })
 
 -- ---------------------------------------------------------------------------
 -- 顺带：grug-far（<leader>sr）怎么限定目录

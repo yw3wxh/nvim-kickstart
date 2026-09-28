@@ -337,7 +337,7 @@ vim.keymap.set('n', '<leader>dW', function() dapui.elements.watches.add() end, {
 --   4) 调试完按 <leader>dt 结束
 --
 -- C++ / C 现在还不能用（缺 DAP 后端），按 <leader>dc 会提示没有配置。
---   先用 overseer 的 gdb 终端方案顶着（<leader>or 里选"C++ 用 gdb 调试（终端界面）"）；
+--   先用 overseer 的 gdb 终端方案顶着（<leader>oo 里选"C++ 用 gdb 调试（终端界面）"）；
 --   想用图形化的断点调试，跑一次：
 --       bash scripts/install-codelldb.sh
 --   装好重启 nvim，<leader>dc 就能用了。

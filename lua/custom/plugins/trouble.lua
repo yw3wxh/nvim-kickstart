@@ -6,8 +6,9 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 比较丑也不好操作。trouble 把它换成一个可交互的列表：
 -- 可以折叠、可以预览、可以直接跳转。
 --
--- 它也能接管 LSP 的"查找引用"结果 —— 按下 grr 之后，
+-- 它也能接管 LSP 的"查找引用"结果 —— 按下 gr（LSP 查引用，键位已对齐 LazyVim）之后，
 -- 引用列表会在 trouble 面板里列出，而不是塞进 quickfix。
+-- ⚠ 别再写 grr：kickstart 那套 grr / gri / grd / grt 已经废弃了。
 vim.pack.add {
   gh 'folke/trouble.nvim',
   gh 'MunifTanjim/nui.nvim', -- trouble 的界面依赖（noice 也用它，装一次即可）
@@ -35,7 +36,7 @@ require('trouble').setup {
 --              （⚠ 注意是**大写 S**；<leader>cl 在 LazyVim 里是「Lsp Info」，见 lsp-info.lua）
 vim.keymap.set('n', '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', { desc = '诊断列表 [X]' })
 vim.keymap.set('n', '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', { desc = '当前文件诊断 [X]' })
-vim.keymap.set('n', '<leader>cs', '<cmd>Trouble symbols toggle<cr>', { desc = '符号大纲 [S]' })
+vim.keymap.set('n', '<leader>cs', '<cmd>Trouble symbols toggle<cr>', { desc = '本文件的符号大纲 [s]' })
 
 -- [[ <leader>cS 为什么会显示 "no results for lsp" ]]
 --
@@ -85,7 +86,7 @@ vim.keymap.set('n', '<leader>cS', function()
   end
 
   vim.cmd 'Trouble lsp toggle'
-end, { desc = '光标下符号：定义/引用/实现 [S]' })
+end, { desc = '光标下符号的定义/引用 [S]' })
 
 -- 让 which-key 把上面这些按键归到一个分组里显示
 -- （which-key 在 plugins.lua 里比本文件先加载，所以这里能直接拿到；

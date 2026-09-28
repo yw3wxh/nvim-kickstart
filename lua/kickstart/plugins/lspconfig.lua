@@ -69,23 +69,23 @@ vim.api.nvim_create_autocmd('LspAttach', {
     --     grn（重命名）      → <leader>cr
     --     gra（代码操作）    → <leader>ca
     --     grD（跳到声明）    → gD（在 telescope.lua 里）
-    --     <leader>th（inlay） → <leader>uh（snacks 的 toggle，见 lazyvim-keymaps.lua）
+    --     <leader>th（inlay） → <leader>uh（snacks 的 toggle，见 custom/plugins/snacks.lua）
     --   跳转类（gd / gr / gI / gy / gD / <leader>ss / <leader>sS）都在 telescope.lua 里。
 
     -- 重命名光标下的变量（大多数语言服务器支持跨文件重命名）
-    map('<leader>cr', vim.lsp.buf.rename, '[C]ode [R]ename')
+    map('<leader>cr', vim.lsp.buf.rename, '重命名符号')
 
     -- 代码操作（quick fix）：通常要把光标放在报错或 LSP 建议上才有内容
-    map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+    map('<leader>ca', vim.lsp.buf.code_action, '代码操作（快速修复）', { 'n', 'x' })
 
     -- 悬浮文档 / 函数签名
-    map('K', function() return vim.lsp.buf.hover() end, 'Hover')
-    map('gK', function() return vim.lsp.buf.signature_help() end, 'Signature Help')
-    map('<c-k>', function() return vim.lsp.buf.signature_help() end, 'Signature Help', 'i')
+    map('K', function() return vim.lsp.buf.hover() end, '悬浮显示文档')
+    map('gK', function() return vim.lsp.buf.signature_help() end, '函数签名帮助')
+    map('<c-k>', function() return vim.lsp.buf.signature_help() end, '函数签名帮助', 'i')
 
     -- CodeLens（clangd 这类服务器不一定支持，没有就什么都不做）
-    map('<leader>cc', vim.lsp.codelens.run, '[C]ode [C]odelens', { 'n', 'x' })
-    map('<leader>cC', vim.lsp.codelens.refresh, '刷新 [C]odelens')
+    map('<leader>cc', vim.lsp.codelens.run, '运行 CodeLens', { 'n', 'x' })
+    map('<leader>cC', vim.lsp.codelens.refresh, '刷新 CodeLens')
 
     -- 下面两个自动命令用于在你把光标停留在某个单词上片刻时，
     -- 高亮该单词的引用。
@@ -160,7 +160,7 @@ local servers = {}
 -- 直接用系统自带的 clangd（本机是 clangd 10.0.0）。
 -- 注意：clangd 靠项目里的 compile_commands.json 才知道编译选项。
 -- 单文件刷题时没有这个文件，clangd 也能用，但可能找不到自定义头文件。
--- 需要的话可以按 <leader>cm 生成一个（见 custom/plugins/cpp.lua）。
+-- 需要的话可以按 <leader>cM 生成一个（见 custom/plugins/cpp.lua）。
 if vim.fn.executable 'clangd' == 1 then
   servers.clangd = {
     cmd = {

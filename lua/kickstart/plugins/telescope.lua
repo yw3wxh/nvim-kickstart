@@ -69,22 +69,42 @@ pcall(require('telescope').load_extension, 'ui-select')
 --     <leader>ss（telescope 内置）  → 让位给「当前文件符号」
 local builtin = require 'telescope.builtin'
 
+-- 「项目根」= 从当前目录往上找，碰到下面这些标志文件就算根（对齐 LazyVim 的 root dir）。
+-- ⚠ 之前的 bug：ff / fF、sg / sG、sw / sW 三对小/大写键**代码完全一样**——
+--   都只是用了 telescope 的默认目录（nvim 的 cwd），描述却一个写"项目根"一个写"当前目录"，
+--   等于骗人。现在小写=真正的根目录，大写=当前目录，两者真的不一样了。
+--   找不到标志文件（比如随便一个临时目录）就退回当前目录，这时两组键效果相同。
+local function root()
+  return vim.fs.root(vim.fn.getcwd(), {
+    '.git',
+    'compile_commands.json',
+    'CMakeLists.txt',
+    'Makefile',
+    'pyproject.toml',
+    'setup.py',
+    'go.mod',
+    'Cargo.toml',
+    'package.json',
+  }) or vim.fn.getcwd()
+end
+
 -- ---- <leader>f：文件 ------------------------------------------------------
-vim.keymap.set('n', '<leader><space>', builtin.find_files, { desc = '找文件（项目根）' })
-vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = '找文件（项目根）' })
+vim.keymap.set('n', '<leader><space>', function() builtin.find_files { cwd = root() } end, { desc = '找文件（项目根）' })
+vim.keymap.set('n', '<leader>ff', function() builtin.find_files { cwd = root() } end, { desc = '找文件（项目根）' })
 vim.keymap.set('n', '<leader>fF', function() builtin.find_files { cwd = vim.fn.getcwd() } end, { desc = '找文件（当前目录）' })
 vim.keymap.set('n', '<leader>fg', builtin.git_files, { desc = '找 git 里已跟踪的文件' })
-vim.keymap.set('n', '<leader>fr', builtin.oldfiles, { desc = '最近打开的文件' })
-vim.keymap.set('n', '<leader>fR', function() builtin.oldfiles { cwd = vim.fn.getcwd() } end, { desc = '最近打开的文件（当前目录）' })
+vim.keymap.set('n', '<leader>fr', builtin.oldfiles, { desc = '最近打开的文件（全部）' })
+-- oldfiles 要用 cwd_only 才是"只看当前目录"；传 cwd 没用（之前就是这么写错的）
+vim.keymap.set('n', '<leader>fR', function() builtin.oldfiles { cwd_only = true } end, { desc = '最近打开的文件（只看当前目录）' })
 vim.keymap.set('n', '<leader>fc', function() builtin.find_files { cwd = vim.fn.stdpath 'config', follow = true } end, { desc = '找 nvim 配置文件' })
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'buffer 列表' })
 vim.keymap.set('n', '<leader>,', builtin.buffers, { desc = 'buffer 列表' })
 
 -- ---- <leader>s：搜索 ------------------------------------------------------
-vim.keymap.set('n', '<leader>/', builtin.live_grep, { desc = '搜内容（项目根）' })
-vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '搜内容（项目根）' })
+vim.keymap.set('n', '<leader>/', function() builtin.live_grep { cwd = root() } end, { desc = '搜内容（项目根）' })
+vim.keymap.set('n', '<leader>sg', function() builtin.live_grep { cwd = root() } end, { desc = '搜内容（项目根）' })
 vim.keymap.set('n', '<leader>sG', function() builtin.live_grep { cwd = vim.fn.getcwd() } end, { desc = '搜内容（当前目录）' })
-vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '搜光标下的词' })
+vim.keymap.set({ 'n', 'v' }, '<leader>sw', function() builtin.grep_string { cwd = root() } end, { desc = '搜光标下的词（项目根）' })
 vim.keymap.set({ 'n', 'v' }, '<leader>sW', function() builtin.grep_string { cwd = vim.fn.getcwd() } end, { desc = '搜光标下的词（当前目录）' })
 vim.keymap.set('n', '<leader>sb', function()
   builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown { winblend = 10, previewer = false })
@@ -105,8 +125,8 @@ vim.keymap.set('n', '<leader>s/', builtin.search_history, { desc = '搜索历史
 vim.keymap.set('n', '<leader>sj', builtin.jumplist, { desc = '跳转记录' })
 vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '标记列表' })
 vim.keymap.set('n', '<leader>sM', builtin.man_pages, { desc = 'man 手册' })
-vim.keymap.set('n', '<leader>sl', builtin.loclist, { desc = 'Location List' })
-vim.keymap.set('n', '<leader>sq', builtin.quickfix, { desc = 'Quickfix List' })
+vim.keymap.set('n', '<leader>sl', builtin.loclist, { desc = '位置列表 Location List' })
+vim.keymap.set('n', '<leader>sq', builtin.quickfix, { desc = '快速修复列表 Quickfix List' })
 -- TODO 注释（todo-comments 插件）
 vim.keymap.set('n', '<leader>st', '<cmd>TodoTelescope<cr>', { desc = '搜索 TODO 注释' })
 vim.keymap.set('n', '<leader>sT', '<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>', { desc = '搜索 TODO/FIX/FIXME' })

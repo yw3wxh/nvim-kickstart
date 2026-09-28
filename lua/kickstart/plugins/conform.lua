@@ -57,6 +57,6 @@ require('conform').setup {
 }
 
 -- ⚠ 键位按 LazyVim 改了：<leader>f → <leader>cf（f 组让给「文件」）
-vim.keymap.set({ 'n', 'v' }, '<leader>cf', function() require('conform').format { async = true } end, { desc = '[C]ode [F]ormat' })
+vim.keymap.set({ 'n', 'v' }, '<leader>cf', function() require('conform').format { async = true } end, { desc = '格式化代码' })
 
 -- vim: ts=2 sts=2 sw=2 et

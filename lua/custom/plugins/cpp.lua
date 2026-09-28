@@ -47,6 +47,9 @@ end
 
 -- ⚠ 键位按 LazyVim 改了：原来用 <leader>cm，而 LazyVim 里 <leader>cm = Mason，
 --    所以编译数据库挪到大写 <leader>cM。
-vim.keymap.set('n', '<leader>cM', generate_compile_commands, { desc = '[C]++ 生成编译数据库 [M]' })
+-- ⚠ 描述别只写「C++」：c 组是 Code（代码 / LSP 动作），在 python 文件里看到孤零零一条
+--    「C++ 生成编译数据库」会让人以为整组都是 C++ 的。这里写全称 + 适用范围；
+--    在非 C/C++ 文件里按下去，函数里也会直接提示「当前文件不是 C/C++」。
+vim.keymap.set('n', '<leader>cM', generate_compile_commands, { desc = '生成编译数据库（仅 C/C++ 用）' })
 
 -- vim: ts=2 sts=2 sw=2 et

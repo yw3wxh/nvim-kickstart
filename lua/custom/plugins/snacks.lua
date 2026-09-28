@@ -157,12 +157,12 @@ require('snacks').setup {
 --    按下去是没反应的。现在统一用 snacks 自带的 `:map()`（见 lazyvim-keymaps.lua）。
 
 -- 在浏览器里打开当前行（需要有 git remote）
-vim.keymap.set('n', '<leader>gb', function() Snacks.gitbrowse() end, { desc = '[G]it 浏览器打开（[B]rowse）' })
+vim.keymap.set('n', '<leader>gb', function() Snacks.gitbrowse() end, { desc = '在浏览器打开当前行（Git）' })
 -- 复制当前行的链接但不开浏览器
-vim.keymap.set({ 'n', 'v' }, '<leader>gB', function() Snacks.gitbrowse.open { what = 'file' } end, { desc = '[G]it 打开整个文件' })
+vim.keymap.set({ 'n', 'v' }, '<leader>gB', function() Snacks.gitbrowse.open { what = 'file' } end, { desc = '在浏览器打开整个文件（Git）' })
 
 -- 删 buffer（比 :bd 聪明，不会把窗口搞乱）
-vim.keymap.set('n', '<leader>bd', function() Snacks.bufdelete() end, { desc = '[B]uffer [D]elete' })
+vim.keymap.set('n', '<leader>bd', function() Snacks.bufdelete() end, { desc = '关闭当前 buffer' })
 
 -- ---------------------------------------------------------------------------
 -- <leader>u 开头的开关组（键位对齐 LazyVim 官方表）
@@ -224,11 +224,19 @@ autoformat_toggle(false):map '<leader>uF'
 -- ---------------------------------------------------------------------------
 -- 终端 / 草稿本 / 性能分析（同样对齐 LazyVim）
 -- ---------------------------------------------------------------------------
--- 终端：ft = 当前目录（LazyVim 里 fT 是工作目录，本机两者一样，都给 snacks 的默认行为）
-vim.keymap.set('n', '<leader>ft', function() Snacks.terminal() end, { desc = '终端（浮动）' })
-vim.keymap.set('n', '<leader>fT', function() Snacks.terminal(nil, { cwd = vim.fn.getcwd() }) end, { desc = '终端（工作目录）' })
-vim.keymap.set({ 'n', 't' }, '<c-/>', function() Snacks.terminal() end, { desc = '终端（浮动）' })
-vim.keymap.set({ 'n', 't' }, '<c-_>', function() Snacks.terminal() end, { desc = '终端（浮动）' })
+-- 终端（浮动，在窗口底部弹出；再按一次收起）
+-- ⚠ 之前 ft 和 fT 代码一模一样（都是当前目录），描述却写成两个意思。现在按
+--   ff / fF 的规矩来：ft = 当前目录，fT = 项目根（从当前目录往上找 .git 等标志文件）。
+local function project_root()
+  return vim.fs.root(vim.fn.getcwd(), { '.git', 'Makefile', 'pyproject.toml', 'package.json', 'go.mod', 'Cargo.toml' })
+    or vim.fn.getcwd()
+end
+vim.keymap.set('n', '<leader>ft', function() Snacks.terminal() end, { desc = '终端（当前目录）' })
+vim.keymap.set('n', '<leader>fT', function() Snacks.terminal(nil, { cwd = project_root() }) end, { desc = '终端（项目根）' })
+-- Ctrl+/ 是 LazyVim 开终端的键（终端里也用它收起，所以 n 和 t 模式都绑）
+vim.keymap.set({ 'n', 't' }, '<c-/>', function() Snacks.terminal() end, { desc = '终端（当前目录）' })
+-- 有些终端把 Ctrl+/ 上报成 Ctrl+_，两个都绑上，防止按了没反应
+vim.keymap.set({ 'n', 't' }, '<c-_>', function() Snacks.terminal() end, { desc = '终端（当前目录）' })
 
 -- 草稿本：<leader>. 打开/收起，<leader>S 挑一个
 vim.keymap.set('n', '<leader>.', function() Snacks.scratch() end, { desc = '草稿本（开/关）' })

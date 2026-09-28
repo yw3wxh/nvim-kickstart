@@ -58,7 +58,7 @@ map('n', '<leader>wd', '<C-W>c', { desc = '关闭当前窗口', remap = true })
 map('n', '[b', '<cmd>bprevious<cr>', { desc = '上一个 buffer' })
 map('n', ']b', '<cmd>bnext<cr>', { desc = '下一个 buffer' })
 map('n', '<leader>bo', function() require('snacks').bufdelete.other() end, { desc = '关闭其它 buffer' })
-map('n', '<leader>bi', function() require('snacks').bufdelete.invisible() end, { desc = '关闭不可见 buffer' })
+map('n', '<leader>bi', function() require('snacks').bufdelete.invisible() end, { desc = '关掉没显示在窗口里的 buffer' })
 map('n', '<leader>bD', '<cmd>:bd<cr>', { desc = '关闭 buffer 和窗口' })
 
 -- ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ map('n', '<leader>xl', function()
     end
   end)
   if not ok and err then vim.notify(err, vim.log.levels.ERROR) end
-end, { desc = 'Location List' })
+end, { desc = '位置列表 Location List' })
 
 map('n', '<leader>xq', function()
   local ok, err = pcall(function()
@@ -112,7 +112,7 @@ map('n', '<leader>xq', function()
     end
   end)
   if not ok and err then vim.notify(err, vim.log.levels.ERROR) end
-end, { desc = 'Quickfix List' })
+end, { desc = '快速修复列表 Quickfix List' })
 
 map('n', '[q', vim.cmd.cprev, { desc = '上一个 quickfix 项' })
 map('n', ']q', vim.cmd.cnext, { desc = '下一个 quickfix 项' })

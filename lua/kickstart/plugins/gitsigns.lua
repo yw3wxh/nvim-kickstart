@@ -40,7 +40,7 @@ require('gitsigns').setup {
       else
         gitsigns.nav_hunk 'next'
       end
-    end, { desc = 'Jump to next git [c]hange' })
+    end, { desc = '下一个改动 [h]' })
 
     map('n', '[h', function()
       if vim.wo.diff then
@@ -48,30 +48,30 @@ require('gitsigns').setup {
       else
         gitsigns.nav_hunk 'prev'
       end
-    end, { desc = 'Jump to previous git [c]hange' })
+    end, { desc = '上一个改动 [h]' })
 
     -- 操作
     -- 可视模式
-    map('v', '<leader>ghs', function() gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = 'git [s]tage hunk' })
-    map('v', '<leader>ghr', function() gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = 'git [r]eset hunk' })
+    map('v', '<leader>ghs', function() gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = '暂存这个改动' })
+    map('v', '<leader>ghr', function() gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' } end, { desc = '撤销这个改动' })
     -- 普通模式
-    map('n', '<leader>ghs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
-    map('n', '<leader>ghr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
-    map('n', '<leader>ghS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
-    map('n', '<leader>ghR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
-    map('n', '<leader>ghp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
-    map('n', '<leader>ghi', gitsigns.preview_hunk_inline, { desc = 'git preview hunk [i]nline' })
-    map('n', '<leader>ghb', function() gitsigns.blame_line { full = true } end, { desc = 'git [b]lame line' })
-    map('n', '<leader>ghd', gitsigns.diffthis, { desc = 'git [d]iff against index' })
-    map('n', '<leader>ghD', function() gitsigns.diffthis '@' end, { desc = 'git [D]iff against last commit' })
-    map('n', '<leader>ghQ', function() gitsigns.setqflist 'all' end, { desc = 'git hunk [Q]uickfix list (all files in repo)' })
-    map('n', '<leader>ghq', gitsigns.setqflist, { desc = 'git hunk [q]uickfix list (all changes in this file)' })
+    map('n', '<leader>ghs', gitsigns.stage_hunk, { desc = '暂存这个改动' })
+    map('n', '<leader>ghr', gitsigns.reset_hunk, { desc = '撤销这个改动' })
+    map('n', '<leader>ghS', gitsigns.stage_buffer, { desc = '暂存整个文件' })
+    map('n', '<leader>ghR', gitsigns.reset_buffer, { desc = '撤销整个文件的改动' })
+    map('n', '<leader>ghp', gitsigns.preview_hunk, { desc = '预览这个改动' })
+    map('n', '<leader>ghi', gitsigns.preview_hunk_inline, { desc = '在行内预览这个改动' })
+    map('n', '<leader>ghb', function() gitsigns.blame_line { full = true } end, { desc = '看这行是谁改的（blame）' })
+    map('n', '<leader>ghd', gitsigns.diffthis, { desc = '和暂存区对比' })
+    map('n', '<leader>ghD', function() gitsigns.diffthis '@' end, { desc = '和上次提交对比' })
+    map('n', '<leader>ghQ', function() gitsigns.setqflist 'all' end, { desc = '整个仓库的改动进快速修复列表' })
+    map('n', '<leader>ghq', gitsigns.setqflist, { desc = '本文件的改动进快速修复列表' })
     -- 开关
-    map('n', '<leader>ghtb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
-    map('n', '<leader>ghtw', gitsigns.toggle_word_diff, { desc = '[T]oggle git intra-line [w]ord diff' })
+    map('n', '<leader>ghtb', gitsigns.toggle_current_line_blame, { desc = '开关行尾显示 blame' })
+    map('n', '<leader>ghtw', gitsigns.toggle_word_diff, { desc = '开关词级 diff' })
 
     -- 文本对象
-    map({ 'o', 'x' }, 'ih', gitsigns.select_hunk)
+    map({ 'o', 'x' }, 'ih', gitsigns.select_hunk, { desc = '选中当前改动（文本对象）' })
   end,
 }
 
