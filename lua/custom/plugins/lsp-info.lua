@@ -1,14 +1,15 @@
 -- [[ 查看"当前文件挂了哪个语言服务器" ]]
 --
--- ⚠ 别和 <leader>cl 搞混：
---    <leader>cl → Trouble 的 lsp 模式，列的是**光标下符号**的定义 / 引用 / 实现
---    <leader>ci → 本文件，**当前 buffer 上挂了哪些语言服务器**（这个才是"看 LSP 程序"）
+-- 键位对齐 LazyVim：<leader>cl = Lsp Info（查看本文件挂了哪些语言服务器）。
+-- ⚠ 别和 <leader>cS 搞混：
+--    <leader>cS → Trouble 的 lsp 模式，列的是**光标下符号**的定义 / 引用 / 实现
+--    <leader>cl → 本文件，**当前 buffer 上挂了哪些语言服务器**（这个才是"看 LSP 程序"）
 --
 -- 为什么不用 :LspInfo：新版 nvim-lspconfig 已经把这个命令删掉了，
 -- Neovim 0.12 本身也没有内置它（实测 exists(':LspInfo') == 0）。
 -- 能用的只有 Lua 接口 vim.lsp.get_clients()，所以这里包一层：
 --   :LspClients   手动敲命令
---   <leader>ci    按键，弹一条多行通知
+--   <leader>cl    按键，弹一条多行通知
 
 --- 收集某个 buffer 上语言服务器的摘要
 ---@param bufnr integer
@@ -61,6 +62,6 @@ vim.api.nvim_create_user_command('LspClients', function()
   vim.notify(table.concat(client_lines(vim.api.nvim_get_current_buf()), '\n'), vim.log.levels.INFO, { title = '当前文件的 LSP' })
 end, { desc = '查看当前 buffer 挂了哪些语言服务器' })
 
-vim.keymap.set('n', '<leader>ci', '<cmd>LspClients<cr>', { desc = '当前文件的 LSP 信息 [I]' })
+vim.keymap.set('n', '<leader>cl', '<cmd>LspClients<cr>', { desc = 'Lsp Info（本文件的语言服务器）[L]' })
 
 -- vim: ts=2 sts=2 sw=2 et

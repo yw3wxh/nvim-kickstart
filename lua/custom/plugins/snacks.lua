@@ -141,15 +141,20 @@ require('snacks').setup {
 
 -- ---------------------------------------------------------------------------
 -- 键位
--- ---------------------------------------------------------------------------
--- 上面这些模块 snacks 不自动绑键（除了 dashboard 的界面快捷键），
--- 所以这里统一配一下，都归到 <leader>z 这一组下面，好记。
-
-vim.keymap.set('n', '<leader>zz', function() Snacks.zen() end, { desc = '[Z]en 专注模式' })
-vim.keymap.set('n', '<leader>zd', function() Snacks.dim.toggle() end, { desc = '[Z] 变暗（[D]im）' })
-vim.keymap.set('n', '<leader>zs', function() Snacks.scratch() end, { desc = '[Z] 草稿本（[S]cratch）' })
-vim.keymap.set('n', '<leader>zt', function() Snacks.terminal() end, { desc = '[Z] 终端（[T]erminal）' })
-vim.keymap.set('n', '<leader>zp', function() Snacks.profiler.scratch() end, { desc = '[Z] 性能分析（[P]rofiler）' })
+-- --------------------------------------------------------------------------
+-- ⚠ 本文件的键位已全部迁到 `custom/plugins/lazyvim-keymaps.lua`，
+--    按 LazyVim 官方表重新排过（原来那套 <leader>z / <leader>u 已作废）：
+--      zen        <leader>zz  →  <leader>uz
+--      dim        <leader>zd  →  <leader>uD
+--      草稿本     <leader>zs  →  <leader>.（<leader>S 选一个）
+--      终端       <leader>zt  →  <leader>ft（<c-/> 也行）
+--      性能分析   <leader>zp  →  <leader>dps / <leader>dpp
+--      缩进参考线 <leader>ui  →  <leader>ug（ui 让给「查看高亮」）
+--      语法高亮   <leader>ut  →  <leader>uT
+--      行号       <leader>un  →  <leader>ul
+--    顺带修了个 bug：`Snacks.toggle.xxx()` 只是**创建** toggle 对象，
+--    必须 `:toggle()` 才真的切换；原来写成 `function() Snacks.toggle.diagnostics() end`
+--    按下去是没反应的。现在统一用 snacks 自带的 `:map()`（见 lazyvim-keymaps.lua）。
 
 -- 在浏览器里打开当前行（需要有 git remote）
 vim.keymap.set('n', '<leader>gb', function() Snacks.gitbrowse() end, { desc = '[G]it 浏览器打开（[B]rowse）' })
@@ -159,22 +164,88 @@ vim.keymap.set({ 'n', 'v' }, '<leader>gB', function() Snacks.gitbrowse.open { wh
 -- 删 buffer（比 :bd 聪明，不会把窗口搞乱）
 vim.keymap.set('n', '<leader>bd', function() Snacks.bufdelete() end, { desc = '[B]uffer [D]elete' })
 
--- 一键开关各类编辑器选项的「toggle」组（<leader>u 前缀，对齐 LazyVim 习惯）
-vim.keymap.set('n', '<leader>ud', function() Snacks.toggle.diagnostics() end, { desc = '[U] 诊断 [D]iagnostics' })
-vim.keymap.set('n', '<leader>un', function() Snacks.toggle.line_number() end, { desc = '[U] 行号 [N]umber' })
-vim.keymap.set('n', '<leader>uw', function() Snacks.toggle.option('wrap', { name = 'Wrap' }) end, { desc = '[U] 自动换行 [W]rap' })
-vim.keymap.set('n', '<leader>us', function() Snacks.toggle.option('spell', { name = 'Spell' }) end, { desc = '[U] 拼写检查 [S]pell' })
-vim.keymap.set('n', '<leader>ui', function() Snacks.toggle.indent() end, { desc = '[U] 缩进参考线 [I]ndent' })
-vim.keymap.set('n', '<leader>ut', function() Snacks.toggle.treesitter() end, { desc = '[U] 语法高亮 [T]reesitter' })
+-- ---------------------------------------------------------------------------
+-- <leader>u 开头的开关组（键位对齐 LazyVim 官方表）
+-- ---------------------------------------------------------------------------
+-- 全都用 snacks 自带的 `:map()`：它内部就是 toggle，还会自动往 which-key
+-- 登记一条带状态图标的说明（开/关看得出来）。
+-- ⚠ 这些必须放在本文件：**不能**放进 lazyvim-keymaps.lua —— 那个文件按字母序
+--   排在 snacks.lua 前面，运行时 snacks 还没进 runtimepath，require 会失败。
+Snacks.toggle.option('spell', { name = 'Spelling' }):map '<leader>us'
+Snacks.toggle.option('wrap', { name = 'Wrap' }):map '<leader>uw'
+Snacks.toggle.option('relativenumber', { name = 'Relative Number' }):map '<leader>uL'
+Snacks.toggle.diagnostics():map '<leader>ud'
+Snacks.toggle.line_number():map '<leader>ul'
+Snacks.toggle.option('conceallevel', {
+  off = 0,
+  on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2,
+  name = 'Conceal Level',
+}):map '<leader>uc'
+Snacks.toggle.option('showtabline', {
+  off = 0,
+  on = vim.o.showtabline > 0 and vim.o.showtabline or 2,
+  name = 'Tabline',
+}):map '<leader>uA'
+Snacks.toggle.treesitter():map '<leader>uT'
+Snacks.toggle.option('background', { off = 'light', on = 'dark', name = 'Dark Background' }):map '<leader>ub'
+Snacks.toggle.dim():map '<leader>uD'
+Snacks.toggle.animate():map '<leader>ua'
+Snacks.toggle.indent():map '<leader>ug'
+Snacks.toggle.scroll():map '<leader>uS'
+Snacks.toggle.inlay_hints():map '<leader>uh'
+Snacks.toggle.zoom():map '<leader>wm'
+Snacks.toggle.zoom():map '<leader>uZ'
+Snacks.toggle.zen():map '<leader>uz'
+
+-- 自动格式化的开关：uf = 全局，uF = 只针对当前文件。
+-- conform 的 format_on_save 会先读这两个变量（见 kickstart/plugins/conform.lua）。
+local function autoformat_toggle(global)
+  return Snacks.toggle.new {
+    id = global and 'autoformat_global' or 'autoformat_buffer',
+    name = global and 'Auto Format (Global)' or 'Auto Format (Buffer)',
+    get = function()
+      if global then
+        return not vim.g.disable_autoformat
+      end
+      return not vim.b[vim.api.nvim_get_current_buf()].disable_autoformat
+    end,
+    set = function(state)
+      if global then
+        vim.g.disable_autoformat = not state
+      else
+        vim.b[vim.api.nvim_get_current_buf()].disable_autoformat = not state
+      end
+    end,
+  }
+end
+autoformat_toggle(true):map '<leader>uf'
+autoformat_toggle(false):map '<leader>uF'
+
+-- ---------------------------------------------------------------------------
+-- 终端 / 草稿本 / 性能分析（同样对齐 LazyVim）
+-- ---------------------------------------------------------------------------
+-- 终端：ft = 当前目录（LazyVim 里 fT 是工作目录，本机两者一样，都给 snacks 的默认行为）
+vim.keymap.set('n', '<leader>ft', function() Snacks.terminal() end, { desc = '终端（浮动）' })
+vim.keymap.set('n', '<leader>fT', function() Snacks.terminal(nil, { cwd = vim.fn.getcwd() }) end, { desc = '终端（工作目录）' })
+vim.keymap.set({ 'n', 't' }, '<c-/>', function() Snacks.terminal() end, { desc = '终端（浮动）' })
+vim.keymap.set({ 'n', 't' }, '<c-_>', function() Snacks.terminal() end, { desc = '终端（浮动）' })
+
+-- 草稿本：<leader>. 打开/收起，<leader>S 挑一个
+vim.keymap.set('n', '<leader>.', function() Snacks.scratch() end, { desc = '草稿本（开/关）' })
+vim.keymap.set('n', '<leader>S', function() Snacks.scratch.select() end, { desc = '选一个草稿本' })
+
+-- 性能分析（LazyVim 挂在 d 组下）
+Snacks.toggle.profiler():map '<leader>dpp'
+Snacks.toggle.profiler_highlights():map '<leader>dph'
+vim.keymap.set('n', '<leader>dps', function() Snacks.profiler.scratch() end, { desc = '性能分析草稿本' })
 
 -- ---------------------------------------------------------------------------
 -- 用法备注
 -- ---------------------------------------------------------------------------
---   <leader>zz  专注模式：再按一次退出。写代码或看长文件时很好用
---   <leader>zs  草稿本：随手记东西，`:w` 才真存盘，不存关掉就没了
---   <leader>zt  终端：底部开一个终端，再按一次收起
---   <leader>zp  性能分析：会打开一个界面列出每个模块耗时，
---               哪天觉得 nvim 变慢了就用它查
+--   zen      专注模式：再按一次退出。写代码或看长文件时很好用
+--   草稿本   随手记东西，`:w` 才真存盘，不存关掉就没了
+--   终端     底部开一个终端，再按一次收起
+--   性能分析 会打开一个界面列出每个模块耗时，哪天觉得 nvim 变慢了就用它查
 --   <leader>gb  需要有 git 仓库且配了 remote，否则会提示没有 URL
 -- ---------------------------------------------------------------------------
 

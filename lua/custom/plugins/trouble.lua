@@ -31,12 +31,13 @@ require('trouble').setup {
 -- <leader>xx  整个项目的诊断（错误 + 警告）
 -- <leader>xX  只看当前文件的诊断
 -- <leader>cs  当前文件的符号大纲（函数、类、变量一览）
--- <leader>cl  光标下符号的定义 / 引用 / 实现 / 类型定义 / 调用层级
+-- <leader>cS  光标下符号的定义 / 引用 / 实现 / 类型定义 / 调用层级
+--              （⚠ 注意是**大写 S**；<leader>cl 在 LazyVim 里是「Lsp Info」，见 lsp-info.lua）
 vim.keymap.set('n', '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', { desc = '诊断列表 [X]' })
 vim.keymap.set('n', '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', { desc = '当前文件诊断 [X]' })
 vim.keymap.set('n', '<leader>cs', '<cmd>Trouble symbols toggle<cr>', { desc = '符号大纲 [S]' })
 
--- [[ <leader>cl 为什么会显示 "no results for lsp" ]]
+-- [[ <leader>cS 为什么会显示 "no results for lsp" ]]
 --
 -- `Trouble lsp` 不是一个"把当前文件信息列出来"的列表，而是把
 --   定义 / 引用 / 实现 / 类型定义 / 声明 / 调用层级
@@ -49,7 +50,7 @@ vim.keymap.set('n', '<leader>cs', '<cmd>Trouble symbols toggle<cr>', { desc = '�
 --
 -- 光秃秃一句 "no results" 分不清是哪种，所以这里先做三道前置检查，
 -- 把上面 1 / 2 / 4 直接说清楚，剩下的才是"这个符号真的没什么可查的"。
-vim.keymap.set('n', '<leader>cl', function()
+vim.keymap.set('n', '<leader>cS', function()
   -- 检查 1：当前 buffer 有没有语言服务器
   if #vim.lsp.get_clients { bufnr = vim.api.nvim_get_current_buf() } == 0 then
     vim.notify(
@@ -84,7 +85,7 @@ vim.keymap.set('n', '<leader>cl', function()
   end
 
   vim.cmd 'Trouble lsp toggle'
-end, { desc = '光标下符号：定义/引用/实现 [L]' })
+end, { desc = '光标下符号：定义/引用/实现 [S]' })
 
 -- 让 which-key 把上面这些按键归到一个分组里显示
 -- （which-key 在 plugins.lua 里比本文件先加载，所以这里能直接拿到；
@@ -94,7 +95,7 @@ pcall(
     require('which-key').add {
       { '<leader>x', group = '诊断/问题 [X]' },
       { '<leader>c', group = '代码 [C]' },
-      { '<leader>n', group = '[N]oice 消息' },
+      { '<leader>sn', group = '[N]oice 消息' },
     }
   end
 )

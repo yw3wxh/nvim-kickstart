@@ -7,7 +7,7 @@
 -- 于是 clangd 只能猜，表现就是：标准库能补全，但某些特性报错、
 -- 或者自定义头文件找不到。
 --
--- 这里的 <leader>cm 就是给单文件场景补上这个文件用的。
+-- 这里的 <leader>cM 就是给单文件场景补上这个文件用的。
 
 -- 想换 C++ 标准的话，改这里即可（c++11 / c++14 / c++17 / c++20）
 vim.g.cpp_standard = vim.g.cpp_standard or 'c++17'
@@ -45,6 +45,8 @@ local function generate_compile_commands()
   vim.cmd 'LspRestart'
 end
 
-vim.keymap.set('n', '<leader>cm', generate_compile_commands, { desc = '[C]++ 生成编译数据库 [M]' })
+-- ⚠ 键位按 LazyVim 改了：原来用 <leader>cm，而 LazyVim 里 <leader>cm = Mason，
+--    所以编译数据库挪到大写 <leader>cM。
+vim.keymap.set('n', '<leader>cM', generate_compile_commands, { desc = '[C]++ 生成编译数据库 [M]' })
 
 -- vim: ts=2 sts=2 sw=2 et

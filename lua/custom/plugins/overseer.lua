@@ -37,9 +37,14 @@ require('overseer').setup {
 -- ---------------------------------------------------------------------------
 -- 键位（都归在 <leader>o 下面）
 -- ---------------------------------------------------------------------------
-vim.keymap.set('n', '<leader>or', '<cmd>OverseerRun<CR>', { desc = '[O]verseer [R]un 选择任务' })
-vim.keymap.set('n', '<leader>ot', '<cmd>OverseerToggle<CR>', { desc = '[O]verseer [T]oggle 任务列表' })
-vim.keymap.set('n', '<leader>oa', '<cmd>OverseerQuickAction<CR>', { desc = '[O]verseer 快速[A]操作（重跑/停止）' })
+-- ⚠ 键位按 LazyVim 重排：
+--     or（选任务）  → oo
+--     ot（任务列表）→ ow
+--     oa（快速操作）→ ot
+--   ob（只编译当前文件）是本机自建的模板，LazyVim 没有，保留。
+vim.keymap.set('n', '<leader>oo', '<cmd>OverseerRun<CR>', { desc = '[O]verseer 选择任务([O]pen)' })
+vim.keymap.set('n', '<leader>ow', '<cmd>OverseerToggle<CR>', { desc = '[O]verseer 任务列表([W]indow)' })
+vim.keymap.set('n', '<leader>ot', '<cmd>OverseerQuickAction<CR>', { desc = '[O]verseer 任务操作([T]ask action)' })
 -- 编译当前文件（不运行）—— 只想看看有没有语法错误时用
 vim.keymap.set('n', '<leader>ob', '<cmd>OverseerRun 编译当前文件<CR>', { desc = '[O]verseer [B]uild 只编译' })
 
@@ -138,10 +143,10 @@ overseer.register_template {
 -- ---------------------------------------------------------------------------
 -- 怎么用
 -- ---------------------------------------------------------------------------
---   <leader>or          弹出任务列表让你挑（比如"编译并运行当前文件"）
+--   <leader>oo          弹出任务列表让你挑（比如"编译并运行当前文件"）
 --   <leader>ob          一步到位：直接编译（不用每次都挑）
---   <leader>ot          打开/关闭底部的任务列表窗口
---   <leader>oa          对最近一次任务做操作：重跑 / 停止 / 看输出
+--   <leader>ow          打开/关闭底部的任务列表窗口
+--   <leader>ot          对最近一次任务做操作：重跑 / 停止 / 看输出
 --
 --   任务列表窗口里：
 --     回车   对这个任务做操作（重启 / 停止 / 打开输出…）

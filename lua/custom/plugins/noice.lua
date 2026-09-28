@@ -122,12 +122,14 @@ require('noice').setup {
   history = { max_entries = 200 },
 }
 
--- 常用按键（都放在 <leader>n 下面，n = noice）
---   <leader>nh  打开消息历史（相当于更好用的 :messages）
---   <leader>nd  关掉当前所有弹出的提示
---   <leader>na  查看最近一条消息
-vim.keymap.set('n', '<leader>nh', '<cmd>Noice history<cr>', { desc = '[N]oice 消息[H]历史' })
-vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = '[N]oice 关闭[D]所有提示' })
-vim.keymap.set('n', '<leader>na', '<cmd>Noice last<cr>', { desc = '[N]oice 最近一条[A]消息' })
+-- 常用按键。按 LazyVim 挪到了 <leader>sn 组下（原来在 <leader>n*）：
+--   <leader>snh  打开消息历史（相当于更好用的 :messages）
+--   <leader>snd  关掉当前所有弹出的提示
+--   <leader>snl  查看最近一条消息
+--   <leader>sna  查看全部消息
+vim.keymap.set('n', '<leader>snh', '<cmd>Noice history<cr>', { desc = '消息[H]历史' })
+vim.keymap.set('n', '<leader>snd', '<cmd>Noice dismiss<cr>', { desc = '关闭[D]所有提示' })
+vim.keymap.set('n', '<leader>snl', '<cmd>Noice last<cr>', { desc = '最近一条消息 [L]' })
+vim.keymap.set('n', '<leader>sna', '<cmd>Noice all<cr>', { desc = '全部消息 [A]' })
 
 -- vim: ts=2 sts=2 sw=2 et

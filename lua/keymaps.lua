@@ -42,7 +42,9 @@ vim.diagnostic.config {
   },
 }
 
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+-- 诊断塞进 location list：键位已按 LazyVim 改成 <leader>xl（开/关 location list）
+-- 和 <leader>xq（quickfix），见 custom/plugins/lazyvim-keymaps.lua。
+-- vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- 用一个更容易被发现的快捷键来退出内置终端模式。
 -- 否则，你通常需要按 <C-\><C-n>，

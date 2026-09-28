@@ -33,14 +33,13 @@ require('grug-far').setup {
 -- ---------------------------------------------------------------------------
 -- 打开方式
 -- ---------------------------------------------------------------------------
--- <leader>sR  打开一个空的搜索替换窗口（在当前工作目录里搜）
+-- <leader>sr  打开一个空的搜索替换窗口（在当前工作目录里搜）
 --
--- ⚠ 这里**故意不用** `<leader>/`：那个键是 kickstart 自带的 telescope
---   "在当前文件里模糊搜索"（见 kickstart/plugins/telescope.lua），
---   我一开始抢了它，实测下来 telescope 那个功能就失效了，所以让回去。
---   `<leader>s` 本来就是 telescope 的搜索前缀组（sf 找文件、sw 搜词、sg 搜 git…），
---   大写 R = Replace，正好和 `sw`（只搜不改）区分开。
-vim.keymap.set('n', '<leader>sR', function() require('grug-far').open() end, { desc = '[S]earch & [R]eplace 全局搜索替换' })
+-- ⚠ 键位按 LazyVim 改过：原来用 <leader>sR，而 LazyVim 里
+--     <leader>sr = Search and Replace（就是本插件）
+--     <leader>sR = Resume（telescope 的"接着上次搜"，见 telescope.lua）
+--   两个正好对调了，所以这里让出大写 R。
+vim.keymap.set('n', '<leader>sr', function() require('grug-far').open() end, { desc = '[S]earch & [R]eplace 搜索替换' })
 
 -- <leader>*   直接以光标下的单词作为搜索词打开（比手打快）
 -- 用法：把光标放在变量名上，按 <leader>*

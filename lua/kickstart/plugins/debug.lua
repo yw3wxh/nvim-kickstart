@@ -262,22 +262,49 @@ end
 --   而且功能键在笔记本上往往还得先按 Fn，麻烦。
 --   nvim-dap 本身不绑定任何键，这里用 d 组前缀是社区里一套常见约定。
 --
+-- ⚠ 键位已按 LazyVim 官方表重排（DAP extras），变化最大的三个：
+--     dr（启动/继续）→ dc            （dr 让位给「开关 REPL」）
+--     do（步过）↔ dO（步出）        （两个正好互换，LazyVim 里 do=步出、dO=步过）
+--     dq（结束）→ dt，dU（界面）→ du，dh（看值）→ de
+--   另外补了 LazyVim 有而我们原先没有的：da（带参数启动）、dC（跑到光标处）、
+--   dg（跳到某行不执行）、dj/dk（堆栈上下）、dl（重跑上次）、dP（暂停）、
+--   ds（会话）、dr（REPL）、dB（条件断点）。
+--   本机原有的两个自定义键保留但改成大写：dL（日志断点）、dW（加监视）。
+--
 -- 控制：
---   dr  启动 / 继续              di  步入（进函数）
---   do  步过（不进函数）        dO  步出（跳出当前函数）
---   dq  结束调试                dU  开关调试界面
-vim.keymap.set('n', '<leader>dr', function() dap.continue() end, { desc = '[D]ebug 启动/继续([R]un)' })
+--   dc  启动 / 继续                di  步入（进函数）
+--   dO  步过（不进函数）        do  步出（跳出当前函数）
+--   dt  结束调试                    du  开关调试界面
+--   de  悬浮看当前变量的值
+vim.keymap.set('n', '<leader>dc', function() dap.continue() end, { desc = '[D]ebug 启动/继续([C]ontinue)' })
+vim.keymap.set('n', '<leader>da', function()
+  dap.continue { before = function(config)
+    local args = vim.fn.input('运行参数（空格分隔，可留空）: ')
+    config.args = vim.split(args, ' ')
+    return config
+  end }
+end, { desc = '[D]ebug 带参数启动([A]rgs)' })
+vim.keymap.set('n', '<leader>dC', function() dap.run_to_cursor() end, { desc = '[D]ebug 跑到光标处([C]ursor)' })
+vim.keymap.set('n', '<leader>dg', function() dap.goto_() end, { desc = '[D]ebug 跳到指定行([G]oto)' })
 vim.keymap.set('n', '<leader>di', function() dap.step_into() end, { desc = '[D]ebug 步入([I]nto)' })
-vim.keymap.set('n', '<leader>do', function() dap.step_over() end, { desc = '[D]ebug 步过([O]ver)' })
-vim.keymap.set('n', '<leader>dO', function() dap.step_out() end, { desc = '[D]ebug 步出([O]ut)' })
-vim.keymap.set('n', '<leader>dq', function() dap.terminate() end, { desc = '[D]ebug 结束调试([Q]uit)' })
-vim.keymap.set('n', '<leader>dU', function() dapui.toggle() end, { desc = '[D]ebug 开关界面([U]I)' })
+vim.keymap.set('n', '<leader>dO', function() dap.step_over() end, { desc = '[D]ebug 步过([O]ver)' })
+vim.keymap.set('n', '<leader>do', function() dap.step_out() end, { desc = '[D]ebug 步出([O]ut)' })
+vim.keymap.set('n', '<leader>dj', function() dap.down() end, { desc = '[D]ebug 堆栈往下([J])' })
+vim.keymap.set('n', '<leader>dk', function() dap.up() end, { desc = '[D]ebug 堆栈往上([K])' })
+vim.keymap.set('n', '<leader>dl', function() dap.run_last() end, { desc = '[D]ebug 重跑上次([L]ast)' })
+vim.keymap.set('n', '<leader>dP', function() dap.pause() end, { desc = '[D]ebug 暂停([P]ause)' })
+vim.keymap.set('n', '<leader>dr', function() dap.repl.toggle() end, { desc = '[D]ebug 开关 REPL([R])' })
+vim.keymap.set('n', '<leader>ds', function() dap.session() end, { desc = '[D]ebug 会话([S]ession)' })
+vim.keymap.set('n', '<leader>dt', function() dap.terminate() end, { desc = '[D]ebug 结束([T]erminate)' })
+vim.keymap.set('n', '<leader>du', function() dapui.toggle() end, { desc = '[D]ebug 开关界面([U]I)' })
+vim.keymap.set({ 'n', 'x' }, '<leader>de', function() dapui.eval() end, { desc = '[D]ebug 看值([E]val)' })
+vim.keymap.set('n', '<leader>dw', function() require('dap.ui.widgets').hover() end, { desc = '[D]ebug 悬浮窗口([W]idgets)' })
 
 -- ---------------------------------------------------------------------------
 -- 断点类键也都在 <leader>d 组下（上面的控制键也是）：
 --   db  普通断点（切换：再按一次取消，也就是清当前行）
---   dc  条件断点（只有条件为真才停，比如 i == 10）
---   dl  日志断点（不停下，只在控制台打印一行，适合看循环里的值）
+--   dB  条件断点（只有条件为真才停，比如 i == 10）
+--   dL  日志断点（不停下，只在控制台打印一行，适合看循环里的值）
 --   dA  清除所有断点
 -- （注意和 snacks 的 <leader>bd 不冲突：那是删 buffer，字母顺序反过来。
 --   想清单个断点，用 db 在当前行再按一次即可——nvim-dap 没有"单行清除"的 API）
@@ -285,37 +312,35 @@ vim.keymap.set('n', '<leader>dU', function() dapui.toggle() end, { desc = '[D]eb
 vim.keymap.set('n', '<leader>db', function() dap.toggle_breakpoint() end, { desc = '[D]ebug 普通断点([B]reakpoint)' })
 vim.keymap.set(
   'n',
-  '<leader>dc',
+  '<leader>dB',
   function() dap.set_breakpoint(vim.fn.input '断点条件（比如 i == 10，可留空）: ') end,
-  { desc = '[D]ebug 条件断点([C]onditional)' }
+  { desc = '[D]ebug 条件断点([B]reakpoint Condition)' }
 )
 vim.keymap.set(
   'n',
-  '<leader>dl',
+  '<leader>dL',
   function() dap.set_breakpoint(nil, nil, vim.fn.input '日志内容（打印到调试控制台、不暂停）: ') end,
   { desc = '[D]ebug 日志断点([L]og)' }
 )
 vim.keymap.set('n', '<leader>dA', function() dap.clear_breakpoints() end, { desc = '[D]ebug 清除所有断点([A]ll)' })
 
--- 监视变量：把光标下的变量加进调试界面右侧的监视列表
-vim.keymap.set('n', '<leader>dw', function() dapui.elements.watches.add() end, { desc = '[D]ebug 加监视([W]atch)' })
--- 悬浮看当前变量的值（不用加到监视列表）
-vim.keymap.set('n', '<leader>dh', function() dapui.eval() end, { desc = '[D]ebug 悬浮看值([H]over)' })
+-- 监视变量：把光标下的变量加进调试界面右侧的监视列表（本机自定义补充）
+vim.keymap.set('n', '<leader>dW', function() dapui.elements.watches.add() end, { desc = '[D]ebug 加监视([W]atch)' })
 
 -- ---------------------------------------------------------------------------
 -- 怎么用（Python 为例，这个是现在就能跑的）
 -- ---------------------------------------------------------------------------
 --   1) 打开一个 .py 文件，把光标放到想停的那行，按 <leader>db 打个红点（再按一次取消）
---   2) 按 <leader>dr 启动 → 会让你选"调试当前 Python 文件"，回车
+--   2) 按 <leader>dc 启动 → 会让你选"调试当前 Python 文件"，回车
 --   3) 程序会停在断点那行，左边自动弹出变量、调用栈
---      <leader>di 进函数 / <leader>do 不进函数往下走 / <leader>dO 跳出当前函数 / <leader>dr 继续跑到下一个断点
---   4) 调试完按 <leader>dq 结束
+--      <leader>di 进函数 / <leader>dO 不进函数往下走 / <leader>do 跳出当前函数 / <leader>dc 继续跑到下一个断点
+--   4) 调试完按 <leader>dt 结束
 --
--- C++ / C 现在还不能用（缺 DAP 后端），按 <leader>dr 会提示没有配置。
+-- C++ / C 现在还不能用（缺 DAP 后端），按 <leader>dc 会提示没有配置。
 --   先用 overseer 的 gdb 终端方案顶着（<leader>or 里选"C++ 用 gdb 调试（终端界面）"）；
 --   想用图形化的断点调试，跑一次：
 --       bash scripts/install-codelldb.sh
---   装好重启 nvim，<leader>dr 就能用了。
+--   装好重启 nvim，<leader>dc 就能用了。
 -- ---------------------------------------------------------------------------
 
 -- vim: ts=2 sts=2 sw=2 et

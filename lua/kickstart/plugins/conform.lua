@@ -9,11 +9,14 @@ local function gh(repo) return 'https://github.com/' .. repo end
 --   ⚠ 这就是之前「按 <C-s> 不自动格式化」的原因 —— 原来的白名单是**空表**（两行都被注释掉了），
 --     所以任何类型保存时都不会触发格式化。现在把已配好格式化器的四种类型都打开。
 -- 注意：这里的类型必须在下面 formatters_by_ft 里配了对应工具，否则会报 "formatter not found"。
--- 手动格式化仍可按 <leader>f（异步，不等）。
+-- 手动格式化按 <leader>cf（LazyVim 键位，异步、不等）。
 vim.pack.add { gh 'stevearc/conform.nvim' }
 require('conform').setup {
   notify_on_error = false,
   format_on_save = function(bufnr)
+    -- 两个「暂停自动格式化」开关，配合 <leader>uf（全局）/ <leader>uF（仅当前文件）
+    -- 的 snacks toggle 使用，见 custom/plugins/lazyvim-keymaps.lua
+    if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then return nil end
     -- 保存时自动格式化的文件类型白名单（注释掉某一行即可单独关掉它）
     local enabled_filetypes = {
       lua = true, -- stylua
@@ -53,6 +56,7 @@ require('conform').setup {
   },
 }
 
-vim.keymap.set({ 'n', 'v' }, '<leader>f', function() require('conform').format { async = true } end, { desc = '[F]ormat buffer' })
+-- ⚠ 键位按 LazyVim 改了：<leader>f → <leader>cf（f 组让给「文件」）
+vim.keymap.set({ 'n', 'v' }, '<leader>cf', function() require('conform').format { async = true } end, { desc = '[C]ode [F]ormat' })
 
 -- vim: ts=2 sts=2 sw=2 et

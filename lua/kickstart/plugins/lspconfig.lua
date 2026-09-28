@@ -65,17 +65,27 @@ vim.api.nvim_create_autocmd('LspAttach', {
       vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
     end
 
-    -- 重命名光标下的变量。
-    --  大多数语言服务器支持跨文件重命名等。
-    map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
+    -- ⚠ 这一组键位已按 LazyVim 官方表重排（原来 kickstart 的 grn / gra / grD / <leader>th 已废弃）：
+    --     grn（重命名）      → <leader>cr
+    --     gra（代码操作）    → <leader>ca
+    --     grD（跳到声明）    → gD（在 telescope.lua 里）
+    --     <leader>th（inlay） → <leader>uh（snacks 的 toggle，见 lazyvim-keymaps.lua）
+    --   跳转类（gd / gr / gI / gy / gD / <leader>ss / <leader>sS）都在 telescope.lua 里。
 
-    -- 执行代码操作，通常需要把光标放在错误或
-    -- LSP 的某个建议上才能触发。
-    map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+    -- 重命名光标下的变量（大多数语言服务器支持跨文件重命名）
+    map('<leader>cr', vim.lsp.buf.rename, '[C]ode [R]ename')
 
-    -- 警告：这不是"跳转到定义"，这是"跳转到声明"。
-    --  例如，在 C 语言中这会带你到头文件。
-    map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+    -- 代码操作（quick fix）：通常要把光标放在报错或 LSP 建议上才有内容
+    map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+
+    -- 悬浮文档 / 函数签名
+    map('K', function() return vim.lsp.buf.hover() end, 'Hover')
+    map('gK', function() return vim.lsp.buf.signature_help() end, 'Signature Help')
+    map('<c-k>', function() return vim.lsp.buf.signature_help() end, 'Signature Help', 'i')
+
+    -- CodeLens（clangd 这类服务器不一定支持，没有就什么都不做）
+    map('<leader>cc', vim.lsp.codelens.run, '[C]ode [C]odelens', { 'n', 'x' })
+    map('<leader>cC', vim.lsp.codelens.refresh, '刷新 [C]odelens')
 
     -- 下面两个自动命令用于在你把光标停留在某个单词上片刻时，
     -- 高亮该单词的引用。
@@ -106,13 +116,8 @@ vim.api.nvim_create_autocmd('LspAttach', {
       })
     end
 
-    -- 下面的代码创建了一个按键映射，用于切换代码中的 inlay hints
-    -- （如果所使用的语言服务器支持的话）
-    --
-    -- 这可能不是你想要的功能，因为它们会挤占你的一些代码
-    if client and client:supports_method('textDocument/inlayHint', event.buf) then
-      map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
-    end
+    -- inlay hints（类型提示等）的开关统一放在 <leader>uh，
+    -- 见 custom/plugins/lazyvim-keymaps.lua（snacks 的 toggle，带状态提示）。
   end,
 })
 

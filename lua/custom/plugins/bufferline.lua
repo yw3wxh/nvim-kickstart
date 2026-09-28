@@ -69,6 +69,12 @@ require('bufferline').setup {
 
 -- [[ 与 bufferline 配套的按键（对齐 LazyVim 习惯）]]
 -- 注意：<leader>bd 已经在 snacks.lua 里绑成 Snacks.bufdelete（删当前 buffer 不乱布局），这里不再重复。
+--
+-- ⚠ 键位按 LazyVim 重排过：
+--     <leader>bs（按字母挑 buffer）→ <leader>bj
+--     <leader>bl（上一个访问的）   → <leader>bl = 关掉左边所有 buffer（LazyVim 语义）
+--     <leader>bn / bp（前后切）    → 删掉，用 [b / ]b 或 <S-h> / <S-l>
+--     <leader>bD                   → 交给通用键（:bd），这里不再重复定义
 local map = vim.keymap.set
 
 -- Shift+H / Shift+L：左右切 buffer（LazyVim 默认，和 <C-h>/<C-l> 切窗口不冲突）
@@ -77,8 +83,9 @@ map('n', '<S-l>', '<cmd>bnext<cr>', { desc = '下一个 buffer' })
 
 -- <leader>b 前缀：buffer 操作组（which-key 会自动归类）
 map('n', '<leader>bb', '<cmd>b#<cr>', { desc = '切到另一个 buffer' })
-map('n', '<leader>bn', '<cmd>bnext<cr>', { desc = '下一个 buffer' })
-map('n', '<leader>bp', '<cmd>bprevious<cr>', { desc = '上一个 buffer' })
-map('n', '<leader>bl', '<cmd>buffer #<cr>', { desc = '上一个访问的 buffer' })
-map('n', '<leader>bD', function() vim.cmd 'bdelete! %' end, { desc = '强制删除当前 buffer' })
-map('n', '<leader>bs', '<cmd>BufferLinePick<cr>', { desc = '按字母选 buffer' })
+map('n', '<leader>bj', '<cmd>BufferLinePick<cr>', { desc = '按字母挑一个 buffer' })
+map('n', '<leader>bl', '<cmd>BufferLineCloseLeft<cr>', { desc = '关掉左边所有 buffer' })
+map('n', '<leader>br', '<cmd>BufferLineCloseRight<cr>', { desc = '关掉右边所有 buffer' })
+map('n', '<leader>bp', '<cmd>BufferLineTogglePin<cr>', { desc = '固定/取消固定当前 buffer' })
+map('n', '[B', '<cmd>BufferLineMovePrev<cr>', { desc = 'buffer 往左挪' })
+map('n', ']B', '<cmd>BufferLineMoveNext<cr>', { desc = 'buffer 往右挪' })

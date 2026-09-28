@@ -54,77 +54,80 @@ pcall(require('telescope').load_extension, 'fzf')
 pcall(require('telescope').load_extension, 'ui-select')
 
 -- 参见 `:help telescope.builtin`
+--
+-- ⚠ 键位已按 LazyVim 官方表（https://www.lazyvim.org/keymaps）重排。
+--   LazyVim 用的是 snacks picker，本机换算成 telescope 的等价功能。
+--   原来 kickstart 那套键的变化：
+--     <leader>sf（找文件）          → <leader>ff（<leader><space> 同）
+--     <leader>s.（最近打开的文件）  → <leader>fr（<leader>fR 只看当前目录）
+--     <leader>sn（nvim 配置文件）   → <leader>fc
+--     <leader>sr（resume）          → <leader>sR（sr 让位给 grug-far 的搜索替换）
+--     <leader>sc（命令列表）        → <leader>sC（sc 让位给命令历史）
+--     <leader>/（本文件内模糊找）   → <leader>sb
+--     <leader>s/（已打开的文件里搜）→ <leader>sB
+--     <leader><leader>（buffer）    → <leader>,（<leader>fb 同）
+--     <leader>ss（telescope 内置）  → 让位给「当前文件符号」
 local builtin = require 'telescope.builtin'
-vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
-vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
-vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
-vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
-vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+-- ---- <leader>f：文件 ------------------------------------------------------
+vim.keymap.set('n', '<leader><space>', builtin.find_files, { desc = '找文件（项目根）' })
+vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = '找文件（项目根）' })
+vim.keymap.set('n', '<leader>fF', function() builtin.find_files { cwd = vim.fn.getcwd() } end, { desc = '找文件（当前目录）' })
+vim.keymap.set('n', '<leader>fg', builtin.git_files, { desc = '找 git 里已跟踪的文件' })
+vim.keymap.set('n', '<leader>fr', builtin.oldfiles, { desc = '最近打开的文件' })
+vim.keymap.set('n', '<leader>fR', function() builtin.oldfiles { cwd = vim.fn.getcwd() } end, { desc = '最近打开的文件（当前目录）' })
+vim.keymap.set('n', '<leader>fc', function() builtin.find_files { cwd = vim.fn.stdpath 'config', follow = true } end, { desc = '找 nvim 配置文件' })
+vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'buffer 列表' })
+vim.keymap.set('n', '<leader>,', builtin.buffers, { desc = 'buffer 列表' })
+
+-- ---- <leader>s：搜索 ------------------------------------------------------
+vim.keymap.set('n', '<leader>/', builtin.live_grep, { desc = '搜内容（项目根）' })
+vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '搜内容（项目根）' })
+vim.keymap.set('n', '<leader>sG', function() builtin.live_grep { cwd = vim.fn.getcwd() } end, { desc = '搜内容（当前目录）' })
+vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '搜光标下的词' })
+vim.keymap.set({ 'n', 'v' }, '<leader>sW', function() builtin.grep_string { cwd = vim.fn.getcwd() } end, { desc = '搜光标下的词（当前目录）' })
+vim.keymap.set('n', '<leader>sb', function()
+  builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown { winblend = 10, previewer = false })
+end, { desc = '本文件内模糊查找' })
+vim.keymap.set('n', '<leader>sB', function()
+  builtin.live_grep { grep_open_files = true, prompt_title = 'Live Grep in Open Files' }
+end, { desc = '只在已打开的文件里搜' })
+vim.keymap.set('n', '<leader>sR', builtin.resume, { desc = '接着上次搜索' })
+vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '搜索诊断（全部）' })
+vim.keymap.set('n', '<leader>sD', function() builtin.diagnostics { bufnr = 0 } end, { desc = '搜索诊断（当前文件）' })
+vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '搜索帮助' })
+vim.keymap.set('n', '<leader>sH', builtin.highlights, { desc = '搜索高亮组' })
+vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '搜索按键' })
+vim.keymap.set('n', '<leader>sC', builtin.commands, { desc = '命令列表' })
+vim.keymap.set('n', '<leader>sc', builtin.command_history, { desc = '命令历史' })
+vim.keymap.set('n', '<leader>s:', builtin.command_history, { desc = '命令历史' })
+vim.keymap.set('n', '<leader>s/', builtin.search_history, { desc = '搜索历史' })
+vim.keymap.set('n', '<leader>sj', builtin.jumplist, { desc = '跳转记录' })
+vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '标记列表' })
+vim.keymap.set('n', '<leader>sM', builtin.man_pages, { desc = 'man 手册' })
+vim.keymap.set('n', '<leader>sl', builtin.loclist, { desc = 'Location List' })
+vim.keymap.set('n', '<leader>sq', builtin.quickfix, { desc = 'Quickfix List' })
+-- TODO 注释（todo-comments 插件）
+vim.keymap.set('n', '<leader>st', '<cmd>TodoTelescope<cr>', { desc = '搜索 TODO 注释' })
+vim.keymap.set('n', '<leader>sT', '<cmd>TodoTelescope keywords=TODO,FIX,FIXME<cr>', { desc = '搜索 TODO/FIX/FIXME' })
 
 -- 当 LSP 附加到缓冲区时，添加基于 Telescope 的 LSP 选择器。
--- 如果之后更换选择器插件，这里就是需要更新这些映射的地方。
+-- 键位同样对齐 LazyVim：gd / gr / gI / gy / gD / gK，
+-- 原来的 grr / gri / grd / grt / gO / gW 那套已废弃（gO、gW 换到 <leader>ss、<leader>sS）。
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('telescope-lsp-attach', { clear = true }),
   callback = function(event)
     local buf = event.buf
+    local opts = function(desc) return { buffer = buf, desc = desc } end
 
-    -- 查找光标下单词的引用。
-    vim.keymap.set('n', 'grr', builtin.lsp_references, { buffer = buf, desc = '[G]oto [R]eferences' })
-
-    -- 跳转到光标下单词的实现。
-    -- 当你的语言有声明类型但没有实际实现的方式时很有用。
-    vim.keymap.set('n', 'gri', builtin.lsp_implementations, { buffer = buf, desc = '[G]oto [I]mplementation' })
-
-    -- 跳转到光标下单词的定义。
-    -- 这是变量首次声明的地方，或者函数定义的地方，等等。
-    -- 要跳回，按 <C-t>。
-    vim.keymap.set('n', 'grd', builtin.lsp_definitions, { buffer = buf, desc = '[G]oto [D]efinition' })
-
-    -- 模糊查找当前文档中的所有符号。
-    -- 符号包括变量、函数、类型等。
-    vim.keymap.set('n', 'gO', builtin.lsp_document_symbols, { buffer = buf, desc = 'Open Document Symbols' })
-
-    -- 模糊查找当前工作区中的所有符号。
-    -- 与文档符号类似，只是搜索范围覆盖整个项目。
-    vim.keymap.set('n', 'gW', builtin.lsp_dynamic_workspace_symbols, { buffer = buf, desc = 'Open Workspace Symbols' })
-
-    -- 跳转到光标下单词的类型。
-    -- 当你不确定某个变量的类型、想查看它的*类型*定义
-    -- （而不是它在*哪里*被定义）时很有用。
-    vim.keymap.set('n', 'grt', builtin.lsp_type_definitions, { buffer = buf, desc = '[G]oto [T]ype Definition' })
+    vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts '跳到定义')
+    vim.keymap.set('n', 'gr', builtin.lsp_references, opts '查找引用')
+    vim.keymap.set('n', 'gI', builtin.lsp_implementations, opts '跳到实现')
+    vim.keymap.set('n', 'gy', builtin.lsp_type_definitions, opts '跳到类型定义')
+    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts '跳到声明')
+    vim.keymap.set('n', '<leader>ss', builtin.lsp_document_symbols, opts '当前文件符号')
+    vim.keymap.set('n', '<leader>sS', builtin.lsp_dynamic_workspace_symbols, opts '整个项目符号')
   end,
 })
-
--- 覆盖搜索时的默认行为和主题
-vim.keymap.set('n', '<leader>/', function()
-  -- 你可以向 Telescope 传递额外的配置来更改主题、布局等。
-  builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-    winblend = 10,
-    previewer = false,
-  })
-end, { desc = '[/] Fuzzily search in current buffer' })
-
--- 也可以传递额外的配置选项。
---  关于特定键的信息参见 `:help telescope.builtin.live_grep()`
-vim.keymap.set(
-  'n',
-  '<leader>s/',
-  function()
-    builtin.live_grep {
-      grep_open_files = true,
-      prompt_title = 'Live Grep in Open Files',
-    }
-  end,
-  { desc = '[S]earch [/] in Open Files' }
-)
-
--- 搜索你的 Neovim 配置文件的快捷方式
-vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config', follow = true } end, { desc = '[S]earch [N]eovim files' })
 
 -- vim: ts=2 sts=2 sw=2 et

@@ -66,7 +66,22 @@ local function open_at_current_file()
   mini_files.open(path)
 end
 
+--- 打开 mini.files，定位到 nvim 的当前工作目录（cwd）
+local function open_at_cwd()
+  mini_files.open(vim.fn.getcwd())
+end
+
+-- ⚠ 顺带补齐 LazyVim 那套文件管理器键（原来只有 <leader>e 和 -）：
+--     <leader>e / <leader>fe  当前文件所在目录
+--     <leader>E / <leader>fE  当前工作目录
+--     <leader>fm / <leader>fM 同上（LazyVim 里 mini.files 专用前缀）
+--   - 这个键 mini.files 用户习惯用，保留（LazyVim 没占用）。
 vim.keymap.set('n', '<leader>e', open_at_current_file, { desc = '[E]xplorer 打开文件管理器' })
+vim.keymap.set('n', '<leader>fe', open_at_current_file, { desc = '文件管理器（当前文件目录）' })
+vim.keymap.set('n', '<leader>fm', open_at_current_file, { desc = '文件管理器（当前文件目录）' })
+vim.keymap.set('n', '<leader>E', open_at_cwd, { desc = '文件管理器（工作目录）' })
+vim.keymap.set('n', '<leader>fE', open_at_cwd, { desc = '文件管理器（工作目录）' })
+vim.keymap.set('n', '<leader>fM', open_at_cwd, { desc = '文件管理器（工作目录）' })
 vim.keymap.set('n', '-', open_at_current_file, { desc = '打开当前文件所在目录' })
 
 -- ---------------------------------------------------------------------------
