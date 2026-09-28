@@ -5,17 +5,21 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 把外部格式化器统一管起来，按文件类型派发：
 --   python → ruff（先 fix 再 format）、c/cpp → clang-format、lua → stylua
 --   （只用本机已装好的工具，不靠 Mason，避免 aarch64/glibc 兼容问题）
--- 默认不开启「保存即格式化」：format_on_save 只对 enabled_filetypes 里的类型生效，
---   目前列表留空；要开自动格式化，把对应类型填进 enabled_filetypes 即可。
--- 手动格式化按 <leader>f（异步）。
+-- 保存即格式化：对 enabled_filetypes 里列出的类型生效（老吴 2026-09-28 要求全开）。
+--   ⚠ 这就是之前「按 <C-s> 不自动格式化」的原因 —— 原来的白名单是**空表**（两行都被注释掉了），
+--     所以任何类型保存时都不会触发格式化。现在把已配好格式化器的四种类型都打开。
+-- 注意：这里的类型必须在下面 formatters_by_ft 里配了对应工具，否则会报 "formatter not found"。
+-- 手动格式化仍可按 <leader>f（异步，不等）。
 vim.pack.add { gh 'stevearc/conform.nvim' }
 require('conform').setup {
   notify_on_error = false,
   format_on_save = function(bufnr)
-    -- 你可以在这里指定保存时自动格式化的文件类型：
+    -- 保存时自动格式化的文件类型白名单（注释掉某一行即可单独关掉它）
     local enabled_filetypes = {
-      -- lua = true,
-      -- python = true,
+      lua = true, -- stylua
+      python = true, -- ruff_fix → ruff_format（ruff_fix 会自动整理 import，等于改动代码）
+      c = true, -- clang-format
+      cpp = true, -- clang-format
     }
     if enabled_filetypes[vim.bo[bufnr].filetype] then
       return { timeout_ms = 500 }
