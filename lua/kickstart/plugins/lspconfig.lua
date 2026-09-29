@@ -158,10 +158,21 @@ local servers = {}
 
 -- C/C++ ----------------------------------------------------------------------
 -- 直接用系统自带的 clangd（本机是 clangd 10.0.0）。
--- 注意：clangd 靠项目里的 compile_commands.json 才知道编译选项。
--- 单文件刷题时没有这个文件，clangd 也能用，但可能找不到自定义头文件。
--- 需要的话可以按 <leader>cM 生成一个（见 custom/plugins/cpp.lua）。
+-- 注意：clangd 靠 compile_commands.json 才知道编译选项（比如 -std=c++17），
+-- 没有它时按默认 C++14 解析，C++17 代码（std::optional 等）会报红。
+--
+-- 单文件刷题不会有 cmake 帮你生成，所以 custom/plugins/cpp.lua 会把打开过的
+-- 源文件自动登记到一个**集中**的编译数据库（~/.cache/nvim/clangd-db/），
+-- 并用下面的 --compile-commands-dir 强制让 clangd 只认它：
+--   · 不依赖 clangd 自己向上找项目根 —— 实测只要任何祖先目录里有 .clangd
+--     索引缓存目录，root 就会被吸到上层，文件旁边写的 json 就读不到了
+--   · 源码目录（OneDrive）里不再多出任何 json 文件
+-- ⚠ 以后若真用 cmake 项目：注释掉 --compile-commands-dir 那一行，
+--    让 clangd 恢复向上搜索项目自己的 build/compile_commands.json；
+--    cpp.lua 里也有保护（有项目 db 的目录不会往集中库塞条目）。
 if vim.fn.executable 'clangd' == 1 then
+  -- 目录必须存在：路径无效时 clangd 会退回"向上查找"的老行为，前面就白保护了
+  vim.fn.mkdir(vim.fn.stdpath 'cache' .. '/clangd-db', 'p')
   servers.clangd = {
     cmd = {
       'clangd',
@@ -169,6 +180,9 @@ if vim.fn.executable 'clangd' == 1 then
       '--clang-tidy', -- 顺带跑 clang-tidy 静态检查
       '--header-insertion=never', -- 不要自动插入 #include，避免乱加头文件
       '--completion-style=detailed', -- 补全时附带函数签名等信息
+
+      -- 集中编译数据库（由 custom/plugins/cpp.lua 自动登记，两处路径必须一致）
+      '--compile-commands-dir=' .. vim.fn.stdpath 'cache' .. '/clangd-db',
     },
   }
 end

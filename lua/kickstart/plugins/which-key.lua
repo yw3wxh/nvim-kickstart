@@ -26,8 +26,9 @@ require('which-key').setup {
     -- ↓↓↓ 自己加的插件（见 lua/custom/plugins/），每个组登记一行 ↓↓↓
     -- ⚠ c 组 = Code（代码 / LSP 动作），不是 C++！
     --   原来这里写的是「[C]++ 工具」，害得打开 python 文件按 <leader>c 也显示 C++，
-    --   其实是历史遗留：c 组里唯一一个 C++ 专用的键是 <leader>cM（生成编译数据库），
-    --   就顺手把整组名字写成了 C++。现已改回「代码」。
+    --   历史遗留：c 组里曾有一个 C++ 专用键 <leader>cM（生成编译数据库，现已删除，
+    --   compile_commands.json 改为打开源文件时自动生成），就顺手把整组名字写成了 C++。
+    --   现已改回「代码」。
     { '<leader>c', group = '代码 [C]' }, -- LSP 动作：cf 格式化 / cl 语言服务器 / cs 符号 / ca 代码操作
     { '<leader>d', group = '[D]ebug 调试' }, -- custom/plugins/debug.lua：断点、监视
     { '<leader>n', group = '[N]oice 消息' }, -- custom/plugins/noice.lua：消息历史
