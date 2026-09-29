@@ -21,9 +21,8 @@ vim.g.have_nerd_font = true
 
 -- 默认显示行号
 vim.o.number = true
--- 你也可以启用相对行号，有助于跳转。
---  可以自己试试看是否喜欢！
--- vim.o.relativenumber = true
+-- 启用相对行号，配合 number 显示当前行绝对行号、其余行相对当前行的偏移，便于跳转。
+vim.o.relativenumber = true
 
 -- 启用鼠标模式，例如调整分屏大小时会很有用！
 vim.o.mouse = 'a'
