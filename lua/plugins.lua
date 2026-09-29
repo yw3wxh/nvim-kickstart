@@ -34,7 +34,6 @@ require 'kickstart.plugins.autopairs' -- 自动补全括号/引号配对（输�
 --  目前已加：
 --    - custom/plugins/noice.lua       消息/命令行美化
 --    - custom/plugins/trouble.lua     诊断列表面板
---    - custom/plugins/cpp.lua         C/C++ 刷题辅助（生成 compile_commands.json）
 --    - custom/plugins/flash.lua       屏幕内快速跳转（占用 s 键，见文件内说明）
 --    - custom/plugins/yanky.lua       剪贴板历史
 --    - custom/plugins/mini-files.lua  文件管理器（用已装的 mini.nvim，无需额外下载）
