@@ -94,10 +94,14 @@ local function treesitter_try_attach(buf, language)
   -- 启用基于 treesitter 的折叠：函数/类/代码块都能用 za 折叠。
   -- 注意：必须在解析器挂上之后设，否则 foldexpr 会报错；这里在 start() 之后设是安全的。
   -- 更多关于折叠的信息参见 `:help folds`
-  vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-  vim.wo.foldmethod = 'expr'
-  -- 默认全展开，只有手动按 za/zc 才折起（否则 foldlevel 默认 0 会让打开即全折）
-  vim.wo.foldlevel = 99
+  -- 必须用【全局】vim.opt，不能只设当前窗口 vim.wo：
+  -- 之前只设 vim.wo，分屏 / 侧边栏 / 新标签页里新开的窗口会从全局默认的
+  -- manual 继承，那些窗口里 za 完全无效（"时灵时不灵"的根因）。
+  -- 无 treesitter 解析器的文件 foldexpr 返回 0（不折叠），不报错；
+  -- help 等自带 foldexpr 的文件用 setlocal 覆盖，不受影响。
+  vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+  vim.opt.foldmethod = 'expr'
+  vim.opt.foldlevel = 99  -- 默认全展开，只有手动按 za/zc 才折起
 
   -- 检查该语言是否支持 treesitter 缩进，如果支持则启用它
   -- 如果没有缩进查询，indentexpr 会回退到 vim 内置的实现
