@@ -91,10 +91,13 @@ local function treesitter_try_attach(buf, language)
   -- 启用语法高亮和其他 treesitter 功能
   vim.treesitter.start(buf, language)
 
-  -- 启用基于 treesitter 的折叠
+  -- 启用基于 treesitter 的折叠：函数/类/代码块都能用 za 折叠。
+  -- 注意：必须在解析器挂上之后设，否则 foldexpr 会报错；这里在 start() 之后设是安全的。
   -- 更多关于折叠的信息参见 `:help folds`
-  -- vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-  -- vim.wo.foldmethod = 'expr'
+  vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+  vim.wo.foldmethod = 'expr'
+  -- 默认全展开，只有手动按 za/zc 才折起（否则 foldlevel 默认 0 会让打开即全折）
+  vim.wo.foldlevel = 99
 
   -- 检查该语言是否支持 treesitter 缩进，如果支持则启用它
   -- 如果没有缩进查询，indentexpr 会回退到 vim 内置的实现
