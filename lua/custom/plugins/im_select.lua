@@ -1,7 +1,8 @@
--- [[ im-select —— 退出插入模式时自动把输入法切回英文 ]]
+-- [[ im-select —— 退出插入模式时自动把输入法切回英文；插入模式也默认英文 ]]
 --
--- 作用：进入插入模式时记住当前输入法；一旦退出到普通模式（或离开命令行），
---       自动切回英文，避免普通模式下中文输入法挡着 h/j/k/l 等按键。
+-- 作用：普通模式和插入模式都默认用英文输入法；只有在你手动切到中文、打完字退出
+--       到普通模式时，才自动切回英文，避免普通模式下中文输入法挡着 h/j/k/l 等按键。
+--       进入插入模式时【不再恢复】上次用过的输入法，所以一进插入就是英文，不会跳中文。
 --
 -- 依赖（按运行环境不同，无需改下面的代码，程序会自动判断）：
 --   - WSL / 原生 Windows：需要 Windows 侧 `im-select.exe` 在 PATH 里
@@ -51,8 +52,10 @@ vim.pack.add { gh 'keaising/im-select.nvim' }
 require('im_select').setup(vim.tbl_extend('force', {
   -- 触发切回英文的事件：离开插入模式、离开命令行
   set_default_events = { 'InsertLeave', 'CmdlineLeave' },
-  -- 进入插入模式时恢复之前用的输入法（不想恢复就改成 {}）
-  set_previous_events = { 'InsertEnter' },
+  -- 进入插入模式时【不恢复】上次用过的输入法（保持英文）。
+  -- 设为空表，正是 im-select 官方推荐的“插入模式也默认英文”做法；
+  -- 之前填 'InsertEnter' 会记住并恢复上次的输入法，导致一进插入就跳中文。
+  set_previous_events = {},
   -- 没装二进制时别刷屏报错
   keep_quiet_on_no_binary = true,
   -- 异步切换，不卡界面
