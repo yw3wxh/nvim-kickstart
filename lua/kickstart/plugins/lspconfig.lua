@@ -1,5 +1,14 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
+-- 是否在 Windows / WSL 下运行。这些环境能用 Mason 下发预编译二进制，
+-- 与 Linux/Kylin(aarch64) 不同，所以 LSP 安装策略按环境分流：
+--   true  → Windows / WSL，用 Mason 装 clangd / basedpyright / ruff / lua_ls
+--   false → Linux/Kylin，改用系统自带 + npm 装的纯 JS 实现（见上方说明）
+local is_win_like = vim.fn.has 'wsl' == 1
+  or vim.fn.has 'win32' == 1
+  or (vim.fn.filereadable '/proc/version' == 1
+    and tostring(vim.fn.readfile('/proc/version')[1]):find 'Microsoft' ~= nil)
+
 -- [[ LSP 配置 ]]
 -- 先简单说明一下：**什么是 LSP？**
 --
@@ -27,18 +36,21 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 出色的帮助章节：`:help lsp-vs-treesitter`
 --
 -- ---------------------------------------------------------------------------
--- ⚠ 本文件与官方 kickstart 最大的不同：不用 Mason
+-- ⚠ 本文件与官方 kickstart 最大的不同：默认不用 Mason（在 Linux/Kylin 上）
 --
--- 官方版本会用 Mason 自动下载安装语言服务器。但本机是
--- aarch64(ARM64) + glibc 2.31，Mason 下发的预编译二进制
+-- 本机是 aarch64(ARM64) + glibc 2.31，Mason 下发的预编译二进制
 -- 多半是 x86_64 或要求更高的 glibc 版本，装完直接跑不起来。
---
--- 所以这里**完全移除 Mason**，改用本机已经装好的服务：
+-- 所以 Linux/Kylin 上**不用 Mason**，改用本机已装好的服务：
 --
 --   C/C++   → clangd        （系统自带，/usr/bin/clangd）
---   Python  → basedpyright  （npm 装到 ~/.local/share/nvim-lsp，纯 JS，无 glibc 依赖）
+--   Python  → basedpyright  （npm 装到 stdpath data，纯 JS，无 glibc 依赖）
 --           → ruff          （~/.local/bin/ruff，负责 lint 与格式化）
---   Lua     → lua_ls        （本机没装，装了才会启用）
+--   Lua     → lua_ls        （本机没装，装了才启用）
+--
+-- 但**在 Windows / WSL 下 Mason 可用**，这里改为让 Mason 负责安装这些
+-- 语言服务器（见文件末尾 `is_win_like` 分支的 mason-lspconfig.ensure_installed）：
+--   clangd / basedpyright / ruff / lua-language-server
+-- 二进制装好后走 PATH 被下面的可执行检测自动接管，其余逻辑无需改动。
 --
 -- 每个服务器都先检测可执行文件在不在，不存在就跳过，
 -- 这样缺哪个都不会在启动时报错刷屏。
@@ -175,43 +187,63 @@ if vim.fn.executable 'clangd' == 1 then
 end
 
 -- Python ---------------------------------------------------------------------
--- basedpyright：类型检查 + 补全 + 悬浮文档。
--- 它是 pyright 的增强版，用 npm 装的纯 JS 实现，
--- 所以完全没有 aarch64 / glibc 的兼容问题。
--- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都能正确定位
-local basedpyright_langserver = vim.fn.stdpath('data') .. '/nvim-lsp/node_modules/basedpyright/langserver.index.js'
-if vim.fn.executable 'node' == 1 and vim.uv.fs_stat(basedpyright_langserver) then
-  -- basedpyright 得知道用哪个 Python 解释器，才能找到第三方库的类型信息。
-  -- 项目里有 .venv 时它会优先用虚拟环境，这里给的是兜底值。
-  local python3 = vim.fn.exepath 'python3'
-  if python3 == '' then python3 = vim.fn.exepath 'python' end -- Windows 上解释器常叫 python
-  if python3 == '' then python3 = 'python3' end
-
-  servers.basedpyright = {
-    -- 直接让 node 去跑 langserver 的入口脚本（basedpyright 本身没有可执行二进制）
-    cmd = { 'node', basedpyright_langserver, '--stdio' },
-    settings = {
-      basedpyright = {
-        analysis = {
-          -- basic   ：只报明显的错误
-          -- standard：默认，报类型不匹配等（推荐）
-          -- strict  ：最严格，连隐式 Any 都报
-          typeCheckingMode = 'standard',
-          autoSearchPaths = true, -- 自动推测项目根目录
-          useLibraryCodeForTypes = true, -- 从第三方库源码里推断类型
-          diagnosticSeverityOverrides = {
-            -- 未使用的 import 交给 ruff（F401）来报，
-            -- 不然 basedpyright 和 ruff 会重复提示同一件事
-            reportUnusedImport = 'none',
-          },
-        },
-      },
-      -- pyright 系列通用的设置（注意是 python.*，不是 basedpyright.*）
-      python = {
-        pythonPath = python3,
+-- 类型检查 + 补全 + 悬浮文档由 basedpyright 负责；ruff 负责代码风格（lint + format），
+-- 二者分工：basedpyright 管类型，ruff 管风格（见下方 ruff 段）。
+--
+-- 安装来源按环境分流：
+--   - Windows / WSL：用 Mason 装的 `basedpyright` 可执行文件，直接 `--stdio` 即可，
+--     无需 node/npm 路径（Mason 已把它放进 PATH，见文件末尾 is_win_like 分支）。
+--   - Linux/Kylin：没有 Mason，退回 npm 装的纯 JS 实现（node + langserver.index.js），
+--     完全避开 aarch64 / glibc 兼容问题。
+-- settings 两份 cmd 共用同一份，避免重复。
+local basedpyright_settings = {
+  basedpyright = {
+    analysis = {
+      -- basic   ：只报明显的错误
+      -- standard：默认，报类型不匹配等（推荐）
+      -- strict  ：最严格，连隐式 Any 都报
+      typeCheckingMode = 'standard',
+      autoSearchPaths = true, -- 自动推测项目根目录
+      useLibraryCodeForTypes = true, -- 从第三方库源码里推断类型
+      diagnosticSeverityOverrides = {
+        -- 未使用的 import 交给 ruff（F401）来报，
+        -- 不然 basedpyright 和 ruff 会重复提示同一件事
+        reportUnusedImport = 'none',
       },
     },
-  }
+  },
+  -- pyright 系列通用的设置（注意是 python.*，不是 basedpyright.*）
+  -- basedpyright 需要 Python 解释器路径才能找到第三方库类型；
+  -- 有 .venv 时它会优先用虚拟环境，这里给兜底值。
+  python = {
+    pythonPath = (function()
+      local p = vim.fn.exepath 'python3'
+      if p == '' then p = vim.fn.exepath 'python' end -- Windows 上解释器常叫 python
+      if p == '' then p = 'python3' end
+      return p
+    end)(),
+  },
+}
+
+if is_win_like then
+  -- Windows / WSL：Mason 装好的 basedpyright 可执行文件
+  if vim.fn.executable 'basedpyright' == 1 then
+    servers.basedpyright = {
+      cmd = { 'basedpyright', '--stdio' },
+      settings = basedpyright_settings,
+    }
+  end
+else
+  -- Linux/Kylin：npm 装好的纯 JS 实现，用 node 跑入口脚本
+  -- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都能正确定位
+  local basedpyright_langserver = vim.fn.stdpath('data') .. '/nvim-lsp/node_modules/basedpyright/langserver.index.js'
+  if vim.fn.executable 'node' == 1 and vim.uv.fs_stat(basedpyright_langserver) then
+    servers.basedpyright = {
+      -- 直接让 node 去跑 langserver 的入口脚本（basedpyright 本身没有可执行二进制）
+      cmd = { 'node', basedpyright_langserver, '--stdio' },
+      settings = basedpyright_settings,
+    }
+  end
 end
 
 -- ruff：极快的 linter + formatter，负责代码风格类问题。
@@ -261,13 +293,38 @@ if vim.fn.executable 'lua-language-server' == 1 then
 end
 
 -- ---------------------------------------------------------------------------
--- 只装 nvim-lspconfig（提供各语言服务器的默认配置），不再装 Mason 三件套
+-- 只装 nvim-lspconfig（提供各语言服务器的默认配置）。
+-- Mason 三件套里，mason 核心已在 debug.lua 装好；这里再补 mason-lspconfig，
+-- 但**只在 Windows/WSL 下才真正启用**（见文件末尾 is_win_like 分支）。
 -- ---------------------------------------------------------------------------
 vim.pack.add { gh 'neovim/nvim-lspconfig' }
+-- mason-lspconfig：把 Mason 装的二进制接到 lspconfig 上。
+-- 这里只是登记进 pack；真正的 setup 在下方 is_win_like 分支里（Linux 不调用，避免 aarch64 拉二进制）。
+vim.pack.add { gh 'williamboman/mason-lspconfig.nvim' }
 
 for name, server in pairs(servers) do
   vim.lsp.config(name, server)
   vim.lsp.enable(name)
+end
+
+-- ---------------------------------------------------------------------------
+-- Windows / WSL：用 Mason 负责安装 C++ / Python 相关语言服务器
+-- （Linux/Kylin 跳过整段，避免 aarch64 拉预编译二进制翻车）
+-- ---------------------------------------------------------------------------
+if is_win_like then
+  -- mason 核心已在 debug.lua 设好；这里只让 mason-lspconfig 把包装好的二进制接到 lspconfig。
+  -- 用 pcall 防止首次运行插件尚未克隆到本地时 require 失败（下一次启动就好了）。
+  local ok, mlsp = pcall(require, 'mason-lspconfig')
+  if ok then
+    mlsp.setup {
+      -- 开机自动装好这些；装完后它们在 PATH 里，上面的可执行检测会自动接管
+      -- （clangd / basedpyright / ruff 见各段，lua_ls 用于编辑 nvim 配置时补全）。
+      ensure_installed = { 'clangd', 'basedpyright', 'ruff', 'lua-language-server' },
+      -- 不自动启用：server 的详细配置/启用由本文件上面的 servers 表负责，
+      -- 避免和 vim.lsp.enable 重复或冲突。
+      automatic_enable = false,
+    }
+  end
 end
 
 -- vim: ts=2 sts=2 sw=2 et
