@@ -19,15 +19,12 @@
 
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- 判断是否在 WSL / 原生 Windows（输入法在 Windows 侧，要用 im-select.exe）
-local is_windows_side = vim.fn.has('wsl') == 1
-  or vim.fn.has('win32') == 1
-  or (vim.fn.filereadable('/proc/version') == 1
-    and tostring(vim.fn.readfile('/proc/version')[1]):find('Microsoft') ~= nil)
+-- 平台判断集中在 lua/platform.lua（is_win_like = WSL 或原生 Windows，输入法在 Windows 侧要用 im-select.exe）
+local platform = require('platform')
 
 local cfg
 
-if is_windows_side then
+if platform.is_win_like then
   -- WSL / 原生 Windows：调用 Windows 的 im-select.exe，切回英文(美国)键盘
   cfg = {
     default_command = 'im-select.exe',

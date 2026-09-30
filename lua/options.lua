@@ -35,14 +35,11 @@ vim.o.showmode = false
 --  如果你希望操作系统剪贴板保持独立，请移除该选项。
 --  参见 `:help 'clipboard'
 --
--- 操作系统判断：WSL 里 Neovim 同样跑在 Linux 用户态（has('linux') 也是 true），
+-- 操作系统判断集中在 lua/platform.lua；WSL 里 Neovim 同样跑在 Linux 用户态（has('linux') 也是 true），
 -- 必须单独识别 WSL——WSL 没有 Wayland/X，剪贴板要走和 Windows 互通的方案。
-local is_wsl = (vim.fn.has('wsl') == 1)
-  or (vim.fn.filereadable('/proc/version') == 1
-    and (vim.fn.readfile('/proc/version')[1] or ''):lower():match('microsoft') ~= nil)
-local is_linux = vim.fn.has('linux') == 1 and not is_wsl
+local platform = require('platform')
 
-if is_wsl then
+if platform.is_wsl then
   -- WSL：没有 Wayland/X，剪贴板和 Windows 互通，交给 PowerShell。
   --   copy 让 Neovim 把文本从 stdin 喂给 Set-Clipboard；paste 用 Get-Clipboard 读回来。
   --   优先 powershell.exe，没有就退而用 pwsh.exe（PowerShell 7）。
@@ -60,7 +57,7 @@ if is_wsl then
       ['*'] = { win_clip, '-NoProfile', '-Command', 'Get-Clipboard' },
     },
   }
-elseif is_linux then
+elseif platform.is_linux then
   -- ⚠ 本机没装 xclip/xsel，桌面是 **Wayland**（UKUI on Wayland，合成器 ukui-kwin_wayland）。
   --   老吴实测 OSC 52 在他的终端不生效，所以走原生 wl-copy / wl-paste 剪贴板。
   --   卡死坑：Wayland 下 wl-copy 拷完默认 fork 到后台持有剪贴板，Neovim 的 clipboard

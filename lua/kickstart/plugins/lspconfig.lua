@@ -1,13 +1,10 @@
 local function gh(repo) return 'https://github.com/' .. repo end
 
--- 是否在 Windows / WSL 下运行。这些环境能用 Mason 下发预编译二进制，
--- 与 Linux/Kylin(aarch64) 不同，所以 LSP 安装策略按环境分流：
+-- 平台判断集中在 lua/platform.lua（is_win_like = WSL 或原生 Windows），此处直接引用。
+-- 这些环境能用 Mason 下发预编译二进制，与 Linux/Kylin(aarch64) 不同，所以 LSP 安装策略按环境分流：
 --   true  → Windows / WSL，用 Mason 装 clangd / basedpyright / ruff / lua_ls
 --   false → Linux/Kylin，改用系统自带 + npm 装的纯 JS 实现（见上方说明）
-local is_win_like = vim.fn.has 'wsl' == 1
-  or vim.fn.has 'win32' == 1
-  or (vim.fn.filereadable '/proc/version' == 1
-    and tostring(vim.fn.readfile('/proc/version')[1]):find 'Microsoft' ~= nil)
+local platform = require('platform')
 
 -- [[ LSP 配置 ]]
 -- 先简单说明一下：**什么是 LSP？**
@@ -48,7 +45,7 @@ local is_win_like = vim.fn.has 'wsl' == 1
 --   Lua     → lua_ls        （本机没装，装了才启用）
 --
 -- 但**在 Windows / WSL 下 Mason 可用**，这里改为让 Mason 负责安装这些
--- 语言服务器（见文件末尾 `is_win_like` 分支的 mason-lspconfig.ensure_installed）：
+-- 语言服务器（见文件末尾 `platform.is_win_like` 分支的 mason-lspconfig.ensure_installed）：
 --   clangd / basedpyright / ruff / lua-language-server
 -- 二进制装好后走 PATH 被下面的可执行检测自动接管，其余逻辑无需改动。
 --
@@ -192,7 +189,7 @@ end
 --
 -- 安装来源按环境分流：
 --   - Windows / WSL：用 Mason 装的 `basedpyright` 可执行文件，直接 `--stdio` 即可，
---     无需 node/npm 路径（Mason 已把它放进 PATH，见文件末尾 is_win_like 分支）。
+--     无需 node/npm 路径（Mason 已把它放进 PATH，见文件末尾 platform.is_win_like 分支）。
 --   - Linux/Kylin：没有 Mason，退回 npm 装的纯 JS 实现（node + langserver.index.js），
 --     完全避开 aarch64 / glibc 兼容问题。
 -- settings 两份 cmd 共用同一份，避免重复。
@@ -225,7 +222,7 @@ local basedpyright_settings = {
   },
 }
 
-if is_win_like then
+if platform.is_win_like then
   -- Windows / WSL：Mason 装好的 basedpyright 可执行文件
   if vim.fn.executable 'basedpyright' == 1 then
     servers.basedpyright = {
@@ -295,11 +292,11 @@ end
 -- ---------------------------------------------------------------------------
 -- 只装 nvim-lspconfig（提供各语言服务器的默认配置）。
 -- Mason 三件套里，mason 核心已在 debug.lua 装好；这里再补 mason-lspconfig，
--- 但**只在 Windows/WSL 下才真正启用**（见文件末尾 is_win_like 分支）。
+-- 但**只在 Windows/WSL 下才真正启用**（见文件末尾 platform.is_win_like 分支）。
 -- ---------------------------------------------------------------------------
 vim.pack.add { gh 'neovim/nvim-lspconfig' }
 -- mason-lspconfig：把 Mason 装的二进制接到 lspconfig 上。
--- 这里只是登记进 pack；真正的 setup 在下方 is_win_like 分支里（Linux 不调用，避免 aarch64 拉二进制）。
+-- 这里只是登记进 pack；真正的 setup 在下方 platform.is_win_like 分支里（Linux 不调用，避免 aarch64 拉二进制）。
 vim.pack.add { gh 'williamboman/mason-lspconfig.nvim' }
 
 for name, server in pairs(servers) do
@@ -311,7 +308,7 @@ end
 -- Windows / WSL：用 Mason 负责安装 C++ / Python 相关语言服务器
 -- （Linux/Kylin 跳过整段，避免 aarch64 拉预编译二进制翻车）
 -- ---------------------------------------------------------------------------
-if is_win_like then
+if platform.is_win_like then
   -- mason 核心已在 debug.lua 设好；这里只让 mason-lspconfig 把包装好的二进制接到 lspconfig。
   -- 用 pcall 防止首次运行插件尚未克隆到本地时 require 失败（下一次启动就好了）。
   local ok, mlsp = pcall(require, 'mason-lspconfig')

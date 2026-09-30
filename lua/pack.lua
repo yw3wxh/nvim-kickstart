@@ -18,6 +18,8 @@
 --  在本节中，我们设置了一些自动命令，用于在特定插件安装或更新后
 --  执行其构建步骤。
 
+local platform = require('platform')
+
 local function run_build(name, cmd, cwd)
   local result = vim.system(cmd, { cwd = cwd }):wait()
   if result.code ~= 0 then
@@ -91,7 +93,7 @@ vim.api.nvim_create_autocmd('PackChanged', {
     end
 
     if name == 'LuaSnip' then
-      if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
+      if not platform.is_win32 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
       return
     end
 
