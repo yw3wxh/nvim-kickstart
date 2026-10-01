@@ -51,6 +51,8 @@ if platform.is_wsl then
   --   直接 `Set-Clipboard -Value $input` 会把中文存成乱码，`Get-Clipboard` 吐回 GBK 字节。
   --   对策：读写前各加一句编码声明，强制按 UTF-8 处理管道（实测 T1/P1 方案字节级通过）。
   --   注意 Set-Clipboard 改用 ReadToEnd() 读全量 stdin（$input 按行枚举，配合编码声明不可靠）。
+  --   paste 侧用 Out.Write((Get-Clipboard -Raw)) 而非裸 Get-Clipboard：
+  --   裸调用会在输出末尾追加一个 CRLF，粘贴到 buffer 末尾会多出一个 ^M 空行。
   local ps_copy = '[Console]::InputEncoding=[Text.Encoding]::UTF8; '
     .. 'Set-Clipboard -Value ([Console]::In.ReadToEnd())'
   local ps_paste = '[Console]::OutputEncoding=[Text.Encoding]::UTF8; '
