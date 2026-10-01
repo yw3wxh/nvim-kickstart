@@ -46,15 +46,24 @@ if platform.is_wsl then
   local win_clip = (vim.fn.executable 'powershell.exe' == 1 and 'powershell.exe')
     or (vim.fn.executable 'pwsh.exe' == 1 and 'pwsh.exe')
     or 'powershell.exe'
+  -- ⚠ 中文乱码坑（2026-10-01 字节级实测）：nvim 喂给 powershell.exe 的是 UTF-8 字节，
+  --   但 PS 按 [Console] 码页（中文系统 = 936/GBK）解码 stdin、编码 stdout：
+  --   直接 `Set-Clipboard -Value $input` 会把中文存成乱码，`Get-Clipboard` 吐回 GBK 字节。
+  --   对策：读写前各加一句编码声明，强制按 UTF-8 处理管道（实测 T1/P1 方案字节级通过）。
+  --   注意 Set-Clipboard 改用 ReadToEnd() 读全量 stdin（$input 按行枚举，配合编码声明不可靠）。
+  local ps_copy = '[Console]::InputEncoding=[Text.Encoding]::UTF8; '
+    .. 'Set-Clipboard -Value ([Console]::In.ReadToEnd())'
+  local ps_paste = '[Console]::OutputEncoding=[Text.Encoding]::UTF8; '
+    .. '[Console]::Out.Write((Get-Clipboard -Raw))'
   vim.g.clipboard = {
-    name = 'WSL → Windows 剪贴板',
+    name = 'WSL → Windows 剪贴板 (UTF-8)',
     copy = {
-      ['+'] = { win_clip, '-NoProfile', '-Command', 'Set-Clipboard -Value $input' },
-      ['*'] = { win_clip, '-NoProfile', '-Command', 'Set-Clipboard -Value $input' },
+      ['+'] = { win_clip, '-NoProfile', '-Command', ps_copy },
+      ['*'] = { win_clip, '-NoProfile', '-Command', ps_copy },
     },
     paste = {
-      ['+'] = { win_clip, '-NoProfile', '-Command', 'Get-Clipboard' },
-      ['*'] = { win_clip, '-NoProfile', '-Command', 'Get-Clipboard' },
+      ['+'] = { win_clip, '-NoProfile', '-Command', ps_paste },
+      ['*'] = { win_clip, '-NoProfile', '-Command', ps_paste },
     },
   }
 elseif platform.is_linux then

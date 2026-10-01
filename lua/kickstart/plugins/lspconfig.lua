@@ -226,7 +226,7 @@ if platform.is_win_like then
   -- Windows / WSL：Mason 装好的 basedpyright 可执行文件
   if vim.fn.executable 'basedpyright' == 1 then
     servers.basedpyright = {
-      cmd = { 'basedpyright', '--stdio' },
+      cmd = { 'basedpyright-langserver', '--stdio' },  -- ⚠ basedpyright 是 CLI 检查器不认 --stdio，服务器入口是 langserver
       settings = basedpyright_settings,
     }
   end
