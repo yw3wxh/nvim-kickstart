@@ -26,7 +26,11 @@
 #   C. 指定版本：
 #        bash scripts/install-codelldb.sh 1.12.3
 #
-# 装完之后重启 nvim 就能用，配置会自动生效（见 lua/custom/plugins/debug.lua）。
+# 装完之后重启 nvim 就能用，配置会自动生效（见 lua/kickstart/plugins/debug.lua）。
+#
+# 注意：这里 DEST 用的是 ${HOME}/.local/share/nvim-dap（$HOME 直展开，少一层 nvim/），
+#   而 debug.lua 会同时探测 stdpath('data')/nvim-dap 和 ~/.local/share/nvim-dap 两个
+#   候选位置，所以装到哪儿都能被认到，不会再出现"装了却用不了"的情况。
 #
 set -euo pipefail
 

@@ -5,11 +5,15 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 这份配置从 custom/plugins/debug.lua 搬到了 kickstart/plugins/debug.lua（更贴近"原版"位置）。
 -- 功能：Python / C++ 调试，键位全用 <leader>d 前缀（不用功能键 F1~F12）。
 --
--- 调试器现状（实测结论）：
---   ✅ Python  → debugpy 已装好（pip），**开箱可用**
---   ⚠ C++     → 需要额外的 DAP 后端（gdb 9.2 不支持 DAP、系统也没 lldb）。
---               这里选 **CodeLLDB**（基于 LLVM 的 lldb，Rust 静态链接，对 aarch64 + glibc 2.31
---               比微软 cpptools 更稳）。装法：bash scripts/install-codelldb.sh，装好自动生效。
+-- 调试器现状（2026-10-09 实测）：
+--   ✅ Python  → debugpy 已装好（pip 1.8.22），**开箱可用**
+--   ✅ C++ / C  → **CodeLLDB 已装**（~/.local/share/nvim-dap/codelldb，aarch64 可执行）
+--       ⚠ 之前按 <leader>dc 报 "no configuration"，根因不是没装，而是**安装路径与本文件
+--         探测的路径差一层 nvim/**（脚本用 $HOME 直展开，配置用 stdpath('data')）。
+--         现在改成按候选列表逐个探测，见下面"探测要认两个位置"的注释。
+--   ⚠ 别指望 gdb 兜底：本机 gdb 是 9.2，**不支持 DAP 协议**（要 gdb 14+ 才有
+--     `--interpreter=dap`），系统也没装 lldb。所以走 gdb MI 的 cpptools 方案在本机不可用。
+--     CodeLLDB 自带整套 lldb、不依赖系统 LLVM，这也是选它的原因。
 --
 -- Mason：装好但【手动模式】，不会自动下载/更新任何调试器（避免这台 aarch64/glibc 2.31
 --   机器上自动拉二进制翻车）。想用 Mason 里的调试器时，自己 :Mason 里点装即可。
@@ -163,17 +167,43 @@ dap.configurations.python = {
 --   （它会下载 codelldb-linux-arm64.vsix 并解压到下面这个路径）
 -- 装好之后重启 nvim 就自动生效，不用改这个文件。
 -- ---------------------------------------------------------------------------
--- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都通用
+-- ---------------------------------------------------------------------------
+-- ⚠ 探测要认两个位置（这是实际踩过的坑，别再简化成单一路径）
+--
+-- scripts/install-codelldb.sh 里的 DEST 是
+--     ${HOME}/.local/share/nvim-dap/codelldb        ← $HOME 直展开，**少一层 nvim/**
+-- 而 stdpath('data') 是
+--     ${HOME}/.local/share/nvim                      ← native Linux / WSL 都能正确定位
+-- 两者差一层，配置只认 stdpath('data') 就会永远探测不到已装好的 codelldb，
+-- 于是 dap_cpp_backend=nil、不注册任何 cpp 配置、且**一声不吭**——
+-- 表现为按 <leader>dc 报 "no configuration"，很容易误判成"没装调试器"。
+--
+-- 所以这里按候选列表逐个探测，命中任一即可，两种装法都认。
+-- ---------------------------------------------------------------------------
+local function first_existing(candidates)
+  for _, p in ipairs(candidates) do
+    if vim.uv.fs_stat(p) then return p end
+  end
+  return nil
+end
+
 local data = vim.fn.stdpath 'data'
-local codelldb = data .. '/nvim-dap/codelldb/extension/adapter/codelldb'
-local cpptools = data .. '/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7'
+local home = vim.fn.expand '~'
+local codelldb = first_existing {
+  data .. '/nvim-dap/codelldb/extension/adapter/codelldb',
+  home .. '/.local/share/nvim-dap/codelldb/extension/adapter/codelldb',
+}
+local cpptools = first_existing {
+  data .. '/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7',
+  home .. '/.local/share/nvim-dap/cpptools/extension/debugAdapters/bin/OpenDebugAD7',
+}
 
 -- 调试前先把当前文件编译出来（保证调试的是最新代码），返回可执行文件路径
 ---@return string
 local function build_current_file()
   local out = vim.fn.expand '%:p:r'
   local src = vim.fn.expand '%:p'
-  local std = vim.g.cpp_standard or 'c++17'
+  local std = vim.g.cpp_standard or 'c++14'
   local compiler = vim.bo.filetype == 'c' and 'gcc' or 'g++'
   local cmd = string.format('%s -std=%s -Wall -Wextra -g -o %s %s', compiler, std, out, src)
   vim.fn.system(cmd)
@@ -250,8 +280,18 @@ elseif vim.uv.fs_stat(cpptools) then
 
   vim.g.dap_cpp_backend = 'cpptools'
 else
-  -- 两个都没有：不报错，C++ 调试暂不可用（降级到 overseer 的 gdb 终端方案）
+  -- 两个后端都没找到。**必须报出来**，不能静默跳过——
+  -- 静默跳过是本仓库反复踩到的坑（basedpyright 当年也是这样"从未启用"却毫无提示）：
+  -- 表现为按<leader>dc 只报 "no configuration"，根本看不出是缺后端还是缺配置。
   vim.g.dap_cpp_backend = nil
+  vim.notify(
+    'C++/C 调试未启用：找不到 DAP 后端（codelldb / cpptools 都没装到预期位置）。\n'
+      .. '本机 gdb 是 9.2，不支持 DAP 协议，所以必须有 CodeLLDB。\n'
+      .. '装法（仓库里已自带 vsix，脚本会优先用本地文件、不联网）：\n'
+      .. '  bash scripts/install-codelldb.sh\n'
+      .. '临时替代：<leader>oo 里选「C++ 用 gdb 调试（终端界面）」。',
+    vim.log.levels.WARN
+  )
 end
 
 -- ---------------------------------------------------------------------------
@@ -336,11 +376,15 @@ vim.keymap.set('n', '<leader>dW', function() dapui.elements.watches.add() end, {
 --      <leader>di 进函数 / <leader>dO 不进函数往下走 / <leader>do 跳出当前函数 / <leader>dc 继续跑到下一个断点
 --   4) 调试完按 <leader>dt 结束
 --
--- C++ / C 现在还不能用（缺 DAP 后端），按 <leader>dc 会提示没有配置。
---   先用 overseer 的 gdb 终端方案顶着（<leader>oo 里选"C++ 用 gdb 调试（终端界面）"）；
---   想用图形化的断点调试，跑一次：
---       bash scripts/install-codelldb.sh
---   装好重启 nvim，<leader>dc 就能用了。
+-- C++ / C 也已可用（CodeLLDB 已装好，走上面的路径探测自动识别）：
+--   1) 打开 .cpp，光标停到想停的那行，按 <leader>db 打断点
+--   2) 按 <leader>dc → 选「调试当前 C++ 文件（先编译再调试）」
+--      （它会先用 g++ -std=c++14 现编一遍，保证调试的是最新代码）
+--   3) 断点停下后 <leader>di / <leader>dO / <leader>dc 与 Python 完全一致
+--   4) <leader>dt 结束
+--
+-- ⚠ 以后若又报 "no configuration"，先查后端有没有被认到：
+--   :lua print(vim.g.dap_cpp_backend)   -- 应输出 codelldb；nil 就是没认到
 -- ---------------------------------------------------------------------------
 
 -- vim: ts=2 sts=2 sw=2 et
