@@ -22,8 +22,18 @@ require('luasnip').setup {}
 --   关于各语言/框架/插件片段的 README：
 --    https://github.com/rafamadriz/friendly-snippets
 --
--- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
--- require('luasnip.loaders.from_vscode').lazy_load()
+--⚠ 这两行原来被注释掉了，导致**所有片段都没加载**（2026-10-13 修）
+--   现象：Python 里敲 `ifmain` 不出 `if __name__ == "__main__":`，
+--        敲 `for` 不出 for 循环骨架、敲 `def` 不出函数骨架…… 全都没有。
+--   实测：require('luasnip').get_snippet_table('python', 0) 直接返回 false，
+--        即python 的 snippet 表是**空的**。
+--   原因：上面只有 `require('luasnip').setup {}`（空 setup），
+--        而 friendly-snippets 虽然**已装在磁盘上**，却没有任何 loader 去读它。
+--
+-- lazy_load() = 按 filetype 懒加载，只有切到对应语言才解析，
+--   不会拖慢启动（加载全部语言大概几十个 json 文件）。
+vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+require('luasnip.loaders.from_vscode').lazy_load()
 
 -- [[ 自动补全引擎 ]]
 vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
