@@ -193,47 +193,9 @@ end
 --   - Linux/Kylin：没有 Mason，退回 npm 装的纯 JS 实现（node + langserver.index.js），
 --     完全避开 aarch64 / glibc 兼容问题。
 -- settings 两份 cmd 共用同一份，避免重复。
--- Python 解释器探测（2026-10-13）
---
--- 为什么必须实探、不能写死：
---   1) 本机 `/usr/bin/python` 指向 **Python 2.7**（发行版历史包袱），
---      而 Python 2 根本没有 typing 模块。认错解释器会让补全/类型全废。
---   2) 系统的 `python3` 是 3.8，老吴终端 PATH 里可能还有别的版本；
---      basedpyright 报什么语法/API 结论，全看喂给它的 pythonVersion。
---   3) Windows 上解释器可能叫 `python` 而不是 `python3`。
---
--- 所以按"python3 优先 → 常见位置兜底"逐个试，并用 `--version` 实测，
--- 只认 **Python 3.x**（2.x 直接跳过），把版本号一并取出来。
-local function detect_python()
-  local candidates = {
-    vim.fn.exepath 'python3',
-    vim.fn.exepath 'python',
-    '/usr/bin/python3',
-    '/usr/local/bin/python3',
-    vim.fn.expand '~/dev/python/bin/python3',
-    '/opt/python/bin/python3',
-    'python3',
-  }
-  local fallback = nil
-  for _, exe in ipairs(candidates) do
-    if exe ~= '' and vim.uv.fs_stat(exe) then
-      local out = vim.fn.system({ exe, '-c', 'import sys;print("%d.%d.%d" % sys.version_info[:3])' })
-      if vim.v.shell_error == 0 then
-        local ver = vim.trim(out)
-        local maj, min = ver:match '^(%d+)%.(%d+)'
-        maj, min = tonumber(maj), tonumber(min)
-        if maj and maj >= 3 then return exe, ver end -- 只认 Python 3+
-        fallback = fallback or { exe, ver } -- 记住 python2 以便后面报错说清
-      end
-    end
-  end
-  return (fallback and fallback[1]) or nil, (fallback and fallback[2]) or nil
-end
-
-local py_exe, py_version = detect_python()
--- basedpyright 认的版本字符串只到"主.次"（如 '3.8'），传 '3.13' 这种也可以，
--- 但传两位更稳，也更贴近它内部对语法特性的判断粒度。
-local py_version_short = py_version and (py_version:match '^%d+%.%d+' or py_version) or nil
+-- Python 解释器探测：见 lua/python-detect.lua（与 conform.lua 的 ruff 共用同一份结果，
+-- 保证 LSP 与格式化器对"这是哪个 Python"的判断一致）。
+local py_exe, py_version, py_version_short = require('python-detect').get()
 
 if not py_exe then
   vim.notify(
@@ -283,7 +245,7 @@ local basedpyright_settings = {
 }
 
 -- 便于排查：启动后想知道 nvim 到底认了哪个 python，直接 :lua print(vim.g.detected_python)
-vim.g.detected_python = py_exe and string.format('%s (Python %s)', py_exe, py_version or '?') or '未找到'
+vim.g.detected_python = require('python-detect').summary()
 
 if platform.is_win_like then
   -- Windows / WSL：Mason 装好的 basedpyright 可执行文件
