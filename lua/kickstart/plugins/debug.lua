@@ -5,8 +5,16 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 这份配置从 custom/plugins/debug.lua 搬到了 kickstart/plugins/debug.lua（更贴近"原版"位置）。
 -- 功能：Python / C++ 调试，键位全用 <leader>d 前缀（不用功能键 F1~F12）。
 --
--- 调试器现状（2026-10-09 实测）：
---   ✅ Python  → debugpy 已装好（pip 1.8.22），**开箱可用**
+-- 调试器现状（2026-10-13 实测）：
+--   ✅ Python  → debugpy 1.8.21，装在 /usr/bin/python3(3.8.10) 的 user site：
+--       ~/.local/lib/python3.8/site-packages/（pip install --user）
+--       ⚠ 踩过的坑：debugpy 曾被装进 Python3.13 的 user site（~/.local/lib/python3.13/），
+--         而 nvim 启动 adapter 用的是 exepath('python3')=/usr/bin/python3，
+--         两个解释器各查各的 site-packages → 报
+--         "ModuleNotFoundError: No module named 'debugpy'"。
+--         结论：**debugpy 必须装在 nvim 用的那个 python3 名下**，装别的解释器不生效。
+--       ⚠ 本机 /tmp 只有 10M（tmpfs），pip 装大包会报 Errno 28 设备上没有空间，
+--         解法：export TMPDIR=/home/user/tmp 再装。
 --   ✅ C++ / C  → **CodeLLDB 已装**（~/.local/share/nvim-dap/codelldb，aarch64 可执行）
 --       ⚠ 之前按 <leader>dc 报 "no configuration"，根因不是没装，而是**安装路径与本文件
 --         探测的路径差一层 nvim/**（脚本用 $HOME 直展开，配置用 stdpath('data')）。
@@ -119,6 +127,30 @@ dap.adapters.python = {
     'debugpy.adapter',
   },
 }
+
+-- 打开 Python 文件时预检 debugpy 是否可用（只查一次）。
+-- 不查的话，缺包要等到按 <leader>dc 才报一串 python 的 ModuleNotFoundError，
+-- 很难一眼看出"该往哪个 python 里装"。
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'python',
+  once = true,
+  group = vim.api.nvim_create_augroup('dap_debugpy_check', { clear = true }),
+  callback = function()
+    vim.system({ python3, '-m', 'debugpy', '--version' }, {}, function(r)
+      if r.code ~= 0 then
+        vim.schedule(function()
+          vim.notify(
+            'Python 调试不可用：' .. python3 .. ' 里没装 debugpy。\n'
+              .. '装法（注意必须装给 nvim 用的这个 python3）：\n'
+              .. '  ' .. python3 .. ' -m pip install --user debugpy\n'
+              .. '若报"设备上没有空间"，是因为 /tmp 只有 10M，先 export TMPDIR=/home/user/tmp 再装。',
+            vim.log.levels.ERROR
+          )
+        end)
+      end
+    end)
+  end,
+})
 
 dap.configurations.python = {
   {
