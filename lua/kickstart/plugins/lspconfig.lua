@@ -235,17 +235,22 @@ else
   -- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都能正确定位
   local basedpyright_langserver = vim.fn.stdpath('data') .. '/nvim-lsp/node_modules/basedpyright/langserver.index.js'
 
-  -- ⚠ node 必须**显式找**，不能只靠 PATH（2026-10-13 修的实际故障）
-  --   本机 node 只在 WorkBuddy 托管目录里，不在系统 PATH：
-  --     /home/user/.workbuddy/binaries/node/versions/<ver>/bin/node
-  --   从终端启动 nvim 时若那条路径不在 PATH 里，`executable('node')` 就是 0，
-  --   于是 basedpyright 永远挂不上——表现就是 Python 没有补全、K 没有文档，
-  --   而ruff（不依赖 node）照常挂着，用 <leader>cl 看会觉得"只有 ruff"，很容易误判。
-  -- 这里按PATH -> 常见安装位置依次探测。
+  -- ⚠ node 显式探测，不只靠 PATH（2026-10-13）
+  --
+  --   本次故障的**真正原因是 basedpyright 没装**（stdpath('data')/nvim-lsp 整个目录不存在），
+  --   node 一直是好的：老吴在 ~/.bashrc:120 有
+  --     export PATH="$HOME/dev/node/bin:$PATH"     → /home/user/dev/node/bin/node (v26.8.1)
+  --   所以从终端启动 nvim 时 executable('node') 本来就是 1。
+  --
+  --   但仍保留显式探测，因为 PATH 并非所有启动方式都可靠：
+  --     - 从桌面图标/应用启动器拉起 nvim（不经过登录 shell）→ 读不到 .bashrc
+  --     - 未来 node 换版本 / 装到别的位置 → PATH 可能滞后
+  --   探测顺序：PATH → 老吴的 dev/node → 常见系统位置 → nvm/volta → WorkBuddy 托管目录。
   local function find_node()
     local p = vim.fn.exepath 'node'
     if p ~= '' and vim.uv.fs_stat(p) then return p end
     for _, cand in ipairs {
+      vim.fn.expand '~/dev/node/bin/node', -- 本机实际安装位置（.bashrc:120 加入 PATH）
       vim.fn.expand '~/.local/bin/node',
       '/usr/local/bin/node',
       '/usr/bin/node',
