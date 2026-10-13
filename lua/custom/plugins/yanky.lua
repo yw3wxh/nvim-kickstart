@@ -5,8 +5,10 @@ local function gh(repo) return 'https://github.com/' .. repo end
 -- 解决什么问题：复制了 A，又复制了 B，然后想粘回 A —— 但 A 已经被覆盖了。
 -- yanky 把每次复制的内容都存进一个"历史环"，随时能挑一个出来粘。
 --
--- 顺手还增加了几种粘贴方式，最实用的是"按缩进粘贴"：
--- 粘贴一段缩进不对的代码时，自动对齐到当前行的缩进，不用手动 `>G` 调。
+-- ⚠ 当前用法（2026-10-13 起）：**只有 y（复制）走 Yanky**，p/P/gp/gP 走原生。
+--   原因见下面「接管复制 / 粘贴」那段长注释（clipboard=unnamedplus
+--   会让 Yanky 从系统剪贴板 +取，而 x 只写 unnamed "，导致 xp 之类的技巧粘错内容）。
+--   Yanky 独有的按缩进粘贴挪到了 <leader>pa / <leader>pA，带高亮的用 <leader>pp / <leader>ph。
 --
 -- 纯 Lua，无二进制依赖。依赖已装的 telescope 提供一个历史列表界面（可选，不装也能用）。
 -- ---------------------------------------------------------------------------
@@ -43,20 +45,53 @@ require('yanky').setup {
 -- ---------------------------------------------------------------------------
 -- 接管复制 / 粘贴
 -- ---------------------------------------------------------------------------
--- 注意：这里必须把 y / p / P 显式映射到 yanky 的 <Plug>，
--- 否则复制的内容不会进历史环，插件等于没生效。
+-- ⚠ 为什么 p / P / gp / gP 不走 Yanky（2026-10-13 修的问题，勿轻易改回去）
+--
+-- 现象：在 C++ 里按xp 想交换相邻字符，结果粘出一整行、且是**新建的一行**。
+--
+-- 根因链条（每一步都实测过）：
+--   options.lua 里无条件设了 vim.o.clipboard = 'unnamedplus'
+--     → Yanky 的 utils.get_default_register() 看到 unnamedplus，
+--       就把默认寄存器从 unnamed(") 换成系统剪贴板(+)
+--     → 但 x（删除字符）只写 "，**不写 +**
+--     → 于是 xp 里的 p 从 + 取到的是"上次复制的东西"（常常是 yy 的一整行）
+--     → linewise内容粘出来自然就是新建一行
+--
+-- 对照实验（只改 clipboard 这一项，其余不变）：
+--   clipboard=unnamedplus（现状） xp => {..., "int bc = 1;", "int cur", "}"}  多出一行 ❌
+--   clipboard=""                      xp => {..., "int bac = 1;", "}"}正常交换 ✅
+--
+-- 注意：这在 Windows / WSL 下同样是坏的（options.lua:83 的 unnamedplus
+--   不在任何平台分支里，三个平台都会中招），只是那边表现为"粘错内容"
+--   而不一定表现为新建一行。所以改成原生是三个平台都受益。
+--
+-- 代价（明确知道再改）：
+--   - 失去 Yanky 的**粘贴高亮**（粘完不闪那一下）
+--   - 失去 p 之后直接 <C-p>/<C-n> 原地换内容
+--     （因为历史环只在走 Yanky 的 put 时才建立）
+--   换来的：xp / xP / ddp / ccp 这类"删完立刻粘"的小技巧全部恢复正常，
+--   且系统剪贴板互通（wl-copy-bg.sh 防卡死包装）完全不受影响。
+--
+-- 想用 Yanky 的按缩进粘贴时，走下面保留的 <leader> 系列键。
+-- ---------------------------------------------------------------------------
 
+-- 复制仍然走 Yanky：要进历史环（<leader>p 选历史就靠它）
 vim.keymap.set({ 'n', 'x' }, 'y', '<Plug>(YankyYank)', { desc = '复制（记入剪贴板历史）' })
-vim.keymap.set({ 'n', 'x' }, 'p', '<Plug>(YankyPutAfter)', { desc = '粘贴到光标后' })
-vim.keymap.set({ 'n', 'x' }, 'P', '<Plug>(YankyPutBefore)', { desc = '粘贴到光标前' })
 
--- gp / gP：按当前行的缩进自动对齐后再粘贴。
--- 粘一段 Python / C++ 代码块时特别省事，不用粘完再手动调缩进
-vim.keymap.set({ 'n', 'x' }, 'gp', '<Plug>(YankyGPutAfter)', { desc = '按缩进粘贴到光标后' })
-vim.keymap.set({ 'n', 'x' }, 'gP', '<Plug>(YankyGPutBefore)', { desc = '按缩进粘贴到光标前' })
+-- 粘贴走**原生**，让寄存器类型和来源都遵循 vim 标准行为
+vim.keymap.set({ 'n', 'x' }, 'p', 'p', { desc = '粘贴到光标后' })
+vim.keymap.set({ 'n', 'x' }, 'P', 'P', { desc = '粘贴到光标前' })
+vim.keymap.set({ 'n', 'x' }, 'gp', 'gp', { desc = '按缩进粘贴到光标后' })
+vim.keymap.set({ 'n', 'x' }, 'gP', 'gP', { desc = '按缩进粘贴到光标前' })
 
--- 刚粘完发现粘错了？不用撤销重粘，直接切换历史里的上一条 / 下一条，
--- 粘好的那段会被**原地替换**成历史里的另一条内容
+-- Yanky 的按缩进粘贴挪到 <leader> 系列：想要"自动对齐缩进 + 粘贴高亮"时用
+vim.keymap.set('n', '<leader>pa', '<Plug>(YankyGPutAfter)', { desc = '[P]aste 按缩进(光标后, Yanky)' })
+vim.keymap.set('n', '<leader>pA', '<Plug>(YankyGPutBefore)', { desc = '[P]aste 按缩进(光标前, Yanky)' })
+vim.keymap.set('n', '<leader>pp', '<Plug>(YankyPutAfter)', { desc = '[P]aste Yanky 粘贴(带高亮)' })
+vim.keymap.set('n', '<leader>ph', '<Plug>(YankyPutBefore)', { desc = '[P]aste Yanky 粘贴(光标前, 带高亮)' })
+
+-- 刚粘完发现粘错了？换成历史里的上一条 / 下一条（需先走过 Yanky 的粘贴，
+-- 见上面 <leader>pp / <leader>pP2 —— 原生 p 不建立历史环，这里会提示没有可替换的内容）
 --
 -- ⚠ 踩过的坑：这里必须用 PreviousEntry / NextEntry，不能用 CycleBackward / CycleForward。
 --   后两者的方向和"历史顺序"是反的 —— 实测过：粘完刚复制的最新一条之后按
