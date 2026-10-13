@@ -212,7 +212,7 @@ local function build_current_file()
   return out
 end
 
-if vim.uv.fs_stat(codelldb) then
+if codelldb then -- first_existing 已验过存在性；nil（未安装）时安全跳过
   -- ---- CodeLLDB（推荐）----
   -- 它是"服务器"模式：nvim 先启动 codelldb 进程，再连到它开的端口上
   dap.adapters.codelldb = {
@@ -248,7 +248,7 @@ if vim.uv.fs_stat(codelldb) then
   dap.configurations.c = dap.configurations.cpp -- C 共用同一套
 
   vim.g.dap_cpp_backend = 'codelldb'
-elseif vim.uv.fs_stat(cpptools) then
+elseif cpptools then -- 同上，nil 安全跳过
   -- ---- cpptools（备选，走 gdb 的 MI）----
   dap.adapters.cppdbg = {
     id = 'cppdbg',

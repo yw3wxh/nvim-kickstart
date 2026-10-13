@@ -16,6 +16,14 @@
 --   fcitx   -> '1'            用 `fcitx-remote` 可查
 --   ibus    -> 'xkb:us::eng'  用 `ibus engine` 可查
 --   WSL     -> '1033'         英文(美国)键盘 LCID
+--
+-- ⚠ WSL 前置条件（2026-10-02 排查实测）：Windows 必须【已安装 en-US 键盘布局】，
+--   否则 `im-select.exe 1033` 会 exit=0 但静默不切换（没有任何报错！本机最初只有
+--   zh-Hans-CN + 微软拼音，正是这个原因导致 InsertLeave 不生效）。
+--   添加方法：Windows 设置 → 时间和语言 → 语言和区域 → 添加语言 English (United States)，
+--   或 PowerShell: `Get-WinUserLanguageList` 后 `$l.Add('en-US'); Set-WinUserLanguageList $l -Force`。
+--   排查手法：终端里直接跑 `im-select.exe 1033` 后 `im-select.exe` 读回，若仍返回 2052
+--   即目标布局缺失，与 nvim 配置无关。
 
 local function gh(repo) return 'https://github.com/' .. repo end
 
