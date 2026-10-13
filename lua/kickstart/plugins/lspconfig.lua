@@ -193,6 +193,56 @@ end
 --   - Linux/Kylin：没有 Mason，退回 npm 装的纯 JS 实现（node + langserver.index.js），
 --     完全避开 aarch64 / glibc 兼容问题。
 -- settings 两份 cmd 共用同一份，避免重复。
+-- Python 解释器探测（2026-10-13）
+--
+-- 为什么必须实探、不能写死：
+--   1) 本机 `/usr/bin/python` 指向 **Python 2.7**（发行版历史包袱），
+--      而 Python 2 根本没有 typing 模块。认错解释器会让补全/类型全废。
+--   2) 系统的 `python3` 是 3.8，老吴终端 PATH 里可能还有别的版本；
+--      basedpyright 报什么语法/API 结论，全看喂给它的 pythonVersion。
+--   3) Windows 上解释器可能叫 `python` 而不是 `python3`。
+--
+-- 所以按"python3 优先 → 常见位置兜底"逐个试，并用 `--version` 实测，
+-- 只认 **Python 3.x**（2.x 直接跳过），把版本号一并取出来。
+local function detect_python()
+  local candidates = {
+    vim.fn.exepath 'python3',
+    vim.fn.exepath 'python',
+    '/usr/bin/python3',
+    '/usr/local/bin/python3',
+    vim.fn.expand '~/dev/python/bin/python3',
+    '/opt/python/bin/python3',
+    'python3',
+  }
+  local fallback = nil
+  for _, exe in ipairs(candidates) do
+    if exe ~= '' and vim.uv.fs_stat(exe) then
+      local out = vim.fn.system({ exe, '-c', 'import sys;print("%d.%d.%d" % sys.version_info[:3])' })
+      if vim.v.shell_error == 0 then
+        local ver = vim.trim(out)
+        local maj, min = ver:match '^(%d+)%.(%d+)'
+        maj, min = tonumber(maj), tonumber(min)
+        if maj and maj >= 3 then return exe, ver end -- 只认 Python 3+
+        fallback = fallback or { exe, ver } -- 记住 python2 以便后面报错说清
+      end
+    end
+  end
+  return (fallback and fallback[1]) or nil, (fallback and fallback[2]) or nil
+end
+
+local py_exe, py_version = detect_python()
+-- basedpyright 认的版本字符串只到"主.次"（如 '3.8'），传 '3.13' 这种也可以，
+-- 但传两位更稳，也更贴近它内部对语法特性的判断粒度。
+local py_version_short = py_version and (py_version:match '^%d+%.%d+' or py_version) or nil
+
+if not py_exe then
+  vim.notify(
+    'Python LSP（basedpyright）未配置：找不到 Python 3 解释器。\n'
+      .. '  装一个（如 apt install python3），或设 vim.g.python_bin 指向你的解释器。',
+    vim.log.levels.WARN
+  )
+end
+
 local basedpyright_settings = {
   basedpyright = {
     analysis = {
@@ -206,6 +256,15 @@ local basedpyright_settings = {
         -- 未使用的 import 交给 ruff（F401）来报，
         -- 不然 basedpyright 和 ruff 会重复提示同一件事
         reportUnusedImport = 'none',
+        -- ⚠ 关键：把"类型弃用"类提示关掉。
+        --   不钉住 pythonVersion 时，basedpyright 会按它内置的**最新版本**标准判断，
+        --   于是把 `from typing import List` 标成 deprecated、建议改成 `list[int]`。
+        --   但内置泛型 list[int] 是 **Python 3.9+ (PEP 585)** 才有的，
+        --   本机是 3.8 —— 实测照它改会直接崩：
+        --     TypeError: 'type' object is not subscriptable
+        --   即"诊断版本 > 运行环境版本"时，建议方向是反的。
+        --   真正治本的是下面的 pythonVersion，但这里再压一层，避免漏网。
+        reportDeprecated = 'none',
       },
     },
   },
@@ -213,14 +272,18 @@ local basedpyright_settings = {
   -- basedpyright 需要 Python 解释器路径才能找到第三方库类型；
   -- 有 .venv 时它会优先用虚拟环境，这里给兜底值。
   python = {
-    pythonPath = (function()
-      local p = vim.fn.exepath 'python3'
-      if p == '' then p = vim.fn.exepath 'python' end -- Windows 上解释器常叫 python
-      if p == '' then p = 'python3' end
-      return p
-    end)(),
+    -- 实测出来的解释器路径；找不到时回落到 'python3' 让它自己去 PATH 找
+    pythonPath = py_exe or vim.g.python_bin or 'python3',
+    -- ⚠ 钉住版本，让所有语法/API 结论都按你**真实运行**的版本给。
+    --   不设这一项 → basedpyright 用内置默认（最新）版本，
+    --   会把 3.8 的合法写法判成 deprecated（见上面 reportDeprecated 的说明）。
+    --   探测不到时留空，不瞎猜一个版本号。
+    pythonVersion = py_version_short,
   },
 }
+
+-- 便于排查：启动后想知道 nvim 到底认了哪个 python，直接 :lua print(vim.g.detected_python)
+vim.g.detected_python = py_exe and string.format('%s (Python %s)', py_exe, py_version or '?') or '未找到'
 
 if platform.is_win_like then
   -- Windows / WSL：Mason 装好的 basedpyright 可执行文件
