@@ -234,12 +234,53 @@ else
   -- Linux/Kylin：npm 装好的纯 JS 实现，用 node 跑入口脚本
   -- 用 stdpath('data') 而不是写死的 ~/.local/share，native Linux / WSL 都能正确定位
   local basedpyright_langserver = vim.fn.stdpath('data') .. '/nvim-lsp/node_modules/basedpyright/langserver.index.js'
-  if vim.fn.executable 'node' == 1 and vim.uv.fs_stat(basedpyright_langserver) then
+
+  -- ⚠ node 必须**显式找**，不能只靠 PATH（2026-10-13 修的实际故障）
+  --   本机 node 只在 WorkBuddy 托管目录里，不在系统 PATH：
+  --     /home/user/.workbuddy/binaries/node/versions/<ver>/bin/node
+  --   从终端启动 nvim 时若那条路径不在 PATH 里，`executable('node')` 就是 0，
+  --   于是 basedpyright 永远挂不上——表现就是 Python 没有补全、K 没有文档，
+  --   而ruff（不依赖 node）照常挂着，用 <leader>cl 看会觉得"只有 ruff"，很容易误判。
+  -- 这里按PATH -> 常见安装位置依次探测。
+  local function find_node()
+    local p = vim.fn.exepath 'node'
+    if p ~= '' and vim.uv.fs_stat(p) then return p end
+    for _, cand in ipairs {
+      vim.fn.expand '~/.local/bin/node',
+      '/usr/local/bin/node',
+      '/usr/bin/node',
+      '/opt/node/bin/node',
+      vim.fn.expand '~/.nvm/current/bin/node',
+      vim.fn.expand '~/.volta/bin/node',
+    } do
+      if vim.uv.fs_stat(cand) then return cand end
+    end
+    -- glob 兜底：WorkBuddy 托管的 node 版本目录
+    local g = vim.fn.glob(vim.fn.expand '~/.workbuddy/binaries/node/versions/*/bin/node', false, true)
+    if g and #g > 0 then return g[#g] end -- 取最后一个（通常是最高版本）
+    return nil
+  end
+
+  local node = find_node()
+  if node and vim.uv.fs_stat(basedpyright_langserver) then
     servers.basedpyright = {
       -- 直接让 node 去跑 langserver 的入口脚本（basedpyright 本身没有可执行二进制）
-      cmd = { 'node', basedpyright_langserver, '--stdio' },
+      cmd = { node, basedpyright_langserver, '--stdio' },
       settings = basedpyright_settings,
     }
+  else
+    -- 缺东西就**报出来**，别再静默跳过（本仓库反复踩的静默失效坑：
+    -- basedpyright 当年就是因为路径差一层而从未启用，却毫无提示）
+    local missing = {}
+    if not node then table.insert(missing, 'node 解释器找不到') end
+    if not vim.uv.fs_stat(basedpyright_langserver) then
+      table.insert(missing, 'basedpyright 未安装（' .. basedpyright_langserver .. '）')
+    end
+    vim.notify(
+      'Python 语言服务 basedpyright 未启用：' .. table.concat(missing, '；') .. '。\n'
+        .. '装法：cd ' .. vim.fn.stdpath('data') .. '/nvim-lsp && npm install basedpyright',
+      vim.log.levels.WARN
+    )
   end
 end
 
