@@ -65,6 +65,19 @@ require('yanky').setup {
 --   不在任何平台分支里，三个平台都会中招），只是那边表现为"粘错内容"
 --   而不一定表现为新建一行。所以改成原生是三个平台都受益。
 --
+-- ⚠ 2026-10-15 深化实测（nvim 0.12.4 + 本机 wl-clipboard provider，headless+真实合成器）：
+--   1) `getreg('+')` 是**实时调 wl-paste 读系统剪贴板**（不是读内存）——所以谁在读 +，
+--      谁就会粘到"别的程序里最后复制的东西"。
+--   2) 原生 p 用的是**内存里的 unnamed 寄存器**——刚 yank 的内容和类型永远正确，
+--      这是 p/P 必须走原生的根本原因（Yanky 的 p 在 unnamedplus 下取 + → 中招）。
+--   3) 系统剪贴板里"末尾带换行"的文本（终端里复制命令输出很典型）粘进 nvim
+--      会被判为 **linewise** → 表现就是"粘出一整行/新建一行"。
+--   4) headless 下 yank 不触发 provider copy（setreg('+') 才触发）——疑似要等 UI 焦点
+--      事件才落盘，交互会话里 y → 外部粘贴是否正常需实机确认。
+--   若"粘出一整行"复发，按顺序查：① 会话是不是旧的（:lua print(vim.fn.maparg('p','n'))
+--      应输出纯 'p'；输出 <Plug>(YankyPutAfter) 就是没重载配置）；② yank 后
+--      :lua print(vim.fn.getregtype('"')) 应输出 v；③ :set clipboard? 应为 unnamedplus。
+--
 -- 代价（明确知道再改）：
 --   - 失去 Yanky 的**粘贴高亮**（粘完不闪那一下）
 --   - 失去 p 之后直接 <C-p>/<C-n> 原地换内容
