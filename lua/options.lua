@@ -91,7 +91,33 @@ elseif platform.is_linux then
   }
 end
 -- Windows / macOS 不设置 vim.g.clipboard，交给 Neovim 自带实现
-vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
+--
+-- ⚠ 2026-10-15 定案：**不设 unnamedplus**（decide 实验实锤，勿轻易改回）。
+--   unnamedplus 的语义是"原生 p 也读 '+'（系统剪贴板）"：
+--     交互会话里 x/y 会触发 provider 异步 copy，之后 p 就从系统剪贴板读回，
+--     拿到的是"上一份"剪贴板内容（通常末尾带换行 → linewise）
+--     → x 之后按 p 粘出一整行/新行（老吴 10-15 连续踩的坑）。
+--   之前 headless 测试全通过是假象：headless 下 x 根本不触发 provider copy。
+--   决定性实验：x 删 'b' 后 setreg('+','ZZ-from-plus')，等 1.5s 再 p
+--     → 粘出 'ZZ-from-plus' 新行，unnamed 里的 'b' 没用上。
+--   改为：clipboard 置空，p/y/x 全走内存寄存器（永远可靠）；
+--   对外同步只留"出站"——真正的 y 由下面 TextYankPost 推到系统剪贴板；
+--   "入站"（从浏览器/终端拷东西进 nvim）用 <leader>P 或 "+p 显式粘贴。
+vim.schedule(function()
+  vim.o.clipboard = ''
+  vim.api.nvim_create_autocmd('TextYankPost', {
+    group = vim.api.nvim_create_augroup('user_yank_to_system_clipboard', { clear = true }),
+    callback = function()
+      -- ⚠ nvim 0.12：TextYankPost 的字段在 vim.v.event 上（args.data 已是 nil）
+      -- 只同步真正的复制（operator='y'）：x/dd 删掉的内容不覆盖系统剪贴板，
+      -- 免得"删个字符就把刚在浏览器里复制的东西冲掉"。
+      -- 显式 "+y 时 regname 就是 '+'，provider 已写系统剪贴板，跳过防重复。
+      if vim.v.event.operator == 'y' and vim.v.event.regname ~= '+' then
+        vim.fn.setreg('+', vim.v.event.regcontents, vim.v.event.regtype)
+      end
+    end,
+  })
+end)
 
 -- 启用断行缩进
 vim.o.breakindent = true
